@@ -1,5 +1,6 @@
 import solara
-import leafmap.maplibregl as leafmap  # 使用 maplibregl 後端
+import leafmap.maplibregl as leafmap  # 使用 3D 後端
+import pydeck as pdk # 確保 pydeck 有被載入
 
 # 設定頁面標題
 @solara.component
@@ -21,7 +22,7 @@ def Page():
         3. **風險分析**：結合 GeoPandas 分析道路沿線的潛在災害風險。
         """)
 
-        # --- 2. 關鍵地點展示 ---
+    # --- 2. 關鍵地點展示 ---
         solara.Markdown("### 📍 路線關鍵點")
         with solara.Row(gap="20px"):
             with solara.Card("起點：台灣地理中心碑", margin=0, elevation=2):
@@ -34,26 +35,22 @@ def Page():
                 solara.Markdown("世界級峽谷景觀，立霧溪切穿大理岩形成的壯麗地貌。")
 
     # --- 3. 互動地圖預覽 ---
-    with solara.Column(style={"padding": "20px", "height": "600px"}):
+    with solara.Column(style={"padding": "20px"}):
         solara.Markdown("### 🗺️ 路線概覽")
         
         # 建立地圖物件
         # style="positron" 是一個很乾淨的底圖
         m = leafmap.Map(center=[24.0, 121.1], zoom=9, style="positron")
         
-        # [修正] 先註解掉這一行，避免 'list object has no attribute to_dict' 錯誤
-        # 因為 maplibregl 後端的 add_marker 需要特殊的 Marker 物件，
-        # 我們之後會改用更強大的 add_geojson 來畫點，這裡先保持地圖純淨。
-        # m.add_marker([121.276, 24.137]) 
-        
-        # 顯示地圖
-        m.element() 
+        # [關鍵修正] maplibregl 後端必須使用 to_solara() 才能顯示！
+        # 這裡不使用 m.element()，那只適用於 ipyleaflet
+        m.to_solara(height="600px")
 
     # --- 4. 頁尾 ---
     with solara.Column(style={"padding": "20px", "border-top": "1px solid #ddd"}):
         solara.Markdown("""
         ---
-        **組員名單**：地理系 114級 - [你的名字]
+        **組員名單**：地理系 114級
         *本專案使用 GitHub Codespaces 開發，部署於 Hugging Face Spaces。*
         """)
 
