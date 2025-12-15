@@ -1,52 +1,53 @@
 import solara
 import leafmap.maplibregl as leafmap
 
-# 武嶺座標 (經度, 緯度) -> 這是 maplibregl 的正確順序！
+# 武嶺座標 (經度 Lon, 緯度 Lat) - MapLibre 的順序
 WULING_CENTER = [121.276, 24.137]
 
 def create_3d_map():
-    # 建立地圖物件
+    # 1. 建立基礎地圖
     m = leafmap.Map(
         center=WULING_CENTER,
-        zoom=11, 
-        pitch=60,      # 傾斜 60 度，展現立體感
-        bearing=30,    # 旋轉 30 度，視角更佳
-        style="positron", # 使用與成功案例相同的穩定底圖
-        height="700px" # 明確指定高度
+        zoom=11,
+        pitch=60,       # 傾斜視角
+        bearing=30,     # 旋轉視角
+        style="positron", # 乾淨的底圖
+        height="100%"
     )
+
+    # 2. [修正] 手動加入 AWS 免費地形來源 (避開 add_terrain 報錯)
+    # 定義地形來源 (RGB Encoded DEM)
+    m.add_source("aws-terrain", {
+        "type": "raster-dem",
+        "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+        "tileSize": 256,
+        "encoding": "terrarium"
+    })
     
-    # 加入 3D 地形來源 (使用 AWS 免費地形圖磚)
-    m.add_terrain(
-        source="aws", 
-        exaggeration=1.5 # 地形誇張倍率
-    )
-    
-    # 加入導航控制項 (右上角的縮放按鈕)
+    # 3. [修正] 啟用地形 (設定誇張係數)
+    m.set_terrain({
+        "source": "aws-terrain", 
+        "exaggeration": 1.5 
+    })
+
+    # 4. 加入控制項
     m.add_layer_control()
     
     return m
 
 @solara.component
 def Page():
-    # 使用 use_memo 快取地圖，避免每次重繪都重新載入 (參考你的 04_story.py)
-    # dependencies=[] 代表只建立一次
+    # 使用 use_memo 確保地圖只建立一次，切換頁面不會重跑
     map_object = solara.use_memo(create_3d_map, dependencies=[])
 
     with solara.Column(style={"padding": "20px"}):
         solara.Title("3D 地形探索")
         solara.Markdown("# 🦅 雲端上的公路：3D 視角")
-        
-        with solara.Card(elevation=2):
-            solara.Markdown("""
-            **操作說明：**
-            * **旋轉**：按住 `滑鼠右鍵` 拖曳
-            * **平移**：按住 `滑鼠左鍵` 拖曳
-            * **縮放**：滾動滑鼠滾輪
-            """)
+        solara.Markdown("請使用 **滑鼠右鍵** 旋轉視角，體驗從埔里一路爬升至武嶺的劇烈高差。")
 
-    # 顯示地圖
-    with solara.Column(style={"height": "750px"}):
-        # 這是最關鍵的一行！使用 maplibregl 專用的渲染方法
+    # 顯示地圖容器
+    with solara.Column(style={"height": "700px"}):
+        # 關鍵：使用 maplibregl 專用的渲染方法
         map_object.to_solara()
 
 Page()
