@@ -2,61 +2,80 @@ import solara
 import leafmap.maplibregl as leafmap
 
 # 定義關鍵地點的 GeoJSON 資料
-# 這樣寫比用 add_marker 更穩定，且支援 3D 後端
 POINTS_DATA = {
     "type": "FeatureCollection",
     "features": [
         {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [120.981, 23.976]},
-            "properties": {"name": "起點：台灣地理中心碑 (450m)", "color": "#00aa00"} # 綠色
+            "properties": {"name": "起點：台灣地理中心碑", "color": "#00aa00"} 
         },
         {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [121.276, 24.137]},
-            "properties": {"name": "最高點：武嶺 (3275m)", "color": "#ff0000"} # 紅色
+            "properties": {"name": "最高點：武嶺", "color": "#ff0000"} 
         },
         {
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [121.611, 24.151]},
-            "properties": {"name": "終點：太魯閣 (60m)", "color": "#0000aa"} # 藍色
+            "properties": {"name": "終點：太魯閣", "color": "#0000aa"} 
         }
     ]
 }
 
 def create_home_map():
-    # 1. 建立地圖 (全覽視角)
+    # 1. 建立基礎地圖
     m = leafmap.Map(
-        center=[24.05, 121.3], # 定位在路線中間
+        center=[121.3, 24.05], # [經度, 緯度] 
         zoom=9,
-        style="positron",      # 乾淨底圖
+        style="positron",
         height="600px",
-        pitch=0,               # 首頁用 2D 平視角比較清楚
+        pitch=0,
         bearing=0
     )
 
-    # 2. 加入關鍵點圖層
-    # 使用 circle-layer 來畫圓點
-    m.add_geojson(
-        POINTS_DATA,
-        layer_type="circle",
-        paint={
+    # 2. [修正] 手動加入資料來源 (避開 add_geojson 可能的 Bug)
+    m.add_source("route_points", {
+        "type": "geojson",
+        "data": POINTS_DATA
+    })
+
+    # 3. [修正] 手動加入圖層 (畫圓點)
+    m.add_layer({
+        "id": "points-layer",
+        "type": "circle",
+        "source": "route_points",
+        "paint": {
             "circle-radius": 8,
-            "circle-color": ["get", "color"], # 讀取 properties 裡的 color
+            "circle-color": ["get", "color"], # 從 properties 讀取顏色
             "circle-stroke-width": 2,
             "circle-stroke-color": "#ffffff"
+        }
+    })
+    
+    # 4. [修正] 手動加入文字標籤圖層
+    m.add_layer({
+        "id": "points-label",
+        "type": "symbol",
+        "source": "route_points",
+        "layout": {
+            "text-field": ["get", "name"], # 顯示 properties 裡的 name
+            "text-offset": [0, 1.2],       # 文字稍微往上位移
+            "text-size": 14,
+            "text-anchor": "top"
         },
-        name="關鍵地點"
-    )
-    
-    # 3. 加入互動控制
+        "paint": {
+            "text-color": "#333333",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2
+        }
+    })
+
     m.add_layer_control()
-    
     return m
 
 @solara.component
 def Page():
-    # 使用 use_memo 確保地圖不重複載入
     map_object = solara.use_memo(create_home_map, dependencies=[])
 
     with solara.Column(style={"padding": "20px"}):
@@ -69,31 +88,27 @@ def Page():
         我們將帶領你穿越台灣最壯麗的公路——**中部橫貫公路 (台8線)** 與 **合歡山公路 (台14甲)**。
         """)
 
-    # --- 關鍵地點展示 (卡片區) ---
+    # 卡片區
     with solara.Column(style={"padding": "0 20px"}):
         solara.Markdown("### 📍 路線亮點")
         with solara.Row(gap="20px"):
             with solara.Card("起點：台灣地理中心碑", margin=0, elevation=1):
-                solara.Markdown("**海拔 450m** - 位於南投埔里，是台灣地理幾何中心。")
+                solara.Markdown("**海拔 450m** - 位於南投埔里。")
             
             with solara.Card("最高點：武嶺", margin=0, elevation=1):
-                solara.Markdown("**海拔 3275m** - 台灣公路最高點，單車騎士聖地。")
+                solara.Markdown("**海拔 3275m** - 台灣公路最高點。")
                 
             with solara.Card("終點：太魯閣", margin=0, elevation=1):
-                solara.Markdown("**海拔 60m** - 世界級峽谷景觀，立霧溪切穿大理岩。")
+                solara.Markdown("**海拔 60m** - 世界級峽谷景觀。")
 
-    # --- 互動地圖區 ---
+    # 地圖區
     with solara.Column(style={"padding": "20px", "height": "650px"}):
         solara.Markdown("### 🗺️ 路線概覽")
-        # 這裡現在放回了真正的地圖！
         with solara.Card(elevation=2, margin=0, style={"padding": "0"}):
             map_object.to_solara()
 
-    # --- 頁尾 ---
+    # 頁尾
     with solara.Column(style={"padding": "20px", "border-top": "1px solid #ddd"}):
-        solara.Markdown("""
-        **組員名單**：地理系 114級
-        *本專案使用 GitHub Codespaces 開發，部署於 Hugging Face Spaces。*
-        """)
+        solara.Markdown("**組員名單**：地理系 114級")
 
 Page()
