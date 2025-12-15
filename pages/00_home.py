@@ -47,13 +47,13 @@ def Page():
         # m.add_marker([121.276, 24.137]) 
         
         # 顯示地圖
-        m.element()
+        m.element() 
 
     # --- 4. 頁尾 ---
     with solara.Column(style={"padding": "20px", "border-top": "1px solid #ddd"}):
         solara.Markdown("""
         ---
-        **組員名單**：地理系 S1143056 陳威齊
+        **組員名單**：地理系 114級 - [你的名字]
         *本專案使用 GitHub Codespaces 開發，部署於 Hugging Face Spaces。*
         """)
 
