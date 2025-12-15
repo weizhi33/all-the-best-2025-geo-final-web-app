@@ -41,12 +41,13 @@ def Page():
         # style="positron" 是一個很乾淨的底圖
         m = leafmap.Map(center=[24.0, 121.1], zoom=9, style="positron")
         
-        # --- 修正點在這裡 ---
-        # 移除了 title 參數，避免報錯
-        m.add_marker([121.276, 24.137]) 
+        # [修正] 先註解掉這一行，避免 'list object has no attribute to_dict' 錯誤
+        # 因為 maplibregl 後端的 add_marker 需要特殊的 Marker 物件，
+        # 我們之後會改用更強大的 add_geojson 來畫點，這裡先保持地圖純淨。
+        # m.add_marker([121.276, 24.137]) 
         
         # 顯示地圖
-        m.element() 
+        m.element()
 
     # --- 4. 頁尾 ---
     with solara.Column(style={"padding": "20px", "border-top": "1px solid #ddd"}):
