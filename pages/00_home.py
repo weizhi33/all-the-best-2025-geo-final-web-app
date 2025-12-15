@@ -22,26 +22,25 @@ def Page():
         solara.Markdown("### 📍 路線亮點")
         
         with solara.Row(gap="20px", style={"flex-wrap": "wrap"}):
-            # 卡片 1
+           # 卡片 1
             with solara.Card("起點：台灣地理中心碑", margin=2):
                 solara.Markdown("**海拔 450m**")
                 solara.Markdown("位於南投埔里，是台灣地理幾何中心。")
-                # 放一張靜態圖片代替地圖
-                solara.Image("https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Geographic_Center_of_Taiwan_Monument_20090620.jpg/640px-Geographic_Center_of_Taiwan_Monument_20090620.jpg", width="100%")
-            
+                # 改用 Markdown 圖片語法
+                solara.Markdown("![地理中心碑](https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Geographic_Center_of_Taiwan_Monument_20090620.jpg/640px-Geographic_Center_of_Taiwan_Monument_20090620.jpg)")
+
             # 卡片 2
             with solara.Card("最高點：武嶺", margin=2):
                 solara.Markdown("**海拔 3275m**")
-                solara.Markdown("台灣公路最高點，也是單車騎士的聖地。")
-                solara.Image("https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Wuling_and_Hehuanshan_East_Peak_20110522.jpg/640px-Wuling_and_Hehuanshan_East_Peak_20110522.jpg", width="100%")
+                solara.Markdown("台灣公路最高點。")
+                solara.Markdown("![武嶺](https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Wuling_and_Hehuanshan_East_Peak_20110522.jpg/640px-Wuling_and_Hehuanshan_East_Peak_20110522.jpg)")
                 
             # 卡片 3
             with solara.Card("終點：太魯閣", margin=2):
                 solara.Markdown("**海拔 60m**")
-                solara.Markdown("世界級峽谷景觀，立霧溪切穿大理岩。")
-                solara.Image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Taroko_Gorge_and_Liwu_River_20080313.jpg/640px-Taroko_Gorge_and_Liwu_River_20080313.jpg", width="100%")
-
-    # --- 3. 專案目標 ---
+                solara.Markdown("世界級峽谷景觀。")
+                solara.Markdown("![太魯閣](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Taroko_Gorge_and_Liwu_River_20080313.jpg/640px-Taroko_Gorge_and_Liwu_River_20080313.jpg)")
+                
     with solara.Column(style={"padding": "20px"}):
         solara.Markdown("""
         ### 🎯 我們要做什麼？
