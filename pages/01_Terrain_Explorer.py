@@ -25,6 +25,7 @@ def create_3d_map():
     })
     
     # 3. [修正] 啟用地形 (設定誇張係數)
+    # 這裡直接告訴地圖使用剛剛定義的 'aws-terrain' 來源
     m.set_terrain({
         "source": "aws-terrain", 
         "exaggeration": 1.5 
