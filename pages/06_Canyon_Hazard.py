@@ -13,7 +13,7 @@ def create_canyon_map():
         # ▲▲▲ 修改這裡 ▲▲▲
         
         pitch=80,      # 維持這個仰角，才有抬頭看峽谷的感覺
-        bearing=-80,   # 視角方向
+        bearing=180,   # 視角方向
         style="liberty",
         height="700px"
     )
