@@ -9,7 +9,7 @@ def create_canyon_map():
         center=YANZIKOU_CENTER,
         
         # ▼▼▼ 修改這裡 ▼▼▼
-        zoom=17.5     # 原本是 15，改成 16.8 (數字越大越近)
+        zoom=17.5,    # 原本是 15，改成 16.8 (數字越大越近)
         # ▲▲▲ 修改這裡 ▲▲▲
         
         pitch=80,      # 維持這個仰角，才有抬頭看峽谷的感覺
@@ -39,7 +39,7 @@ def create_canyon_map():
         "tileSize": 256,
         "encoding": "terrarium"
     })
-    m.set_terrain({"source": "aws-terrain", "exaggeration": 2.0})
+    m.set_terrain({"source": "aws-terrain", "exaggeration": 3.0})
 
     # 3. [模擬] 繪製堰塞湖水域 (假設水位上升)
     # 這是一條沿著河道往上游延伸的粗線，代表積水區
