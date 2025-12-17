@@ -1,25 +1,24 @@
 import solara
-import leafmap.leafmap as leafmap # 注意：這裡改用標準 2D 後端
+import leafmap.leafmap as leafmap
 
 def create_split_map():
     # 建立地圖，定位在霧社水庫
-    # Google Maps 的衛星圖 vs 混合圖
     m = leafmap.Map(
-        center=[24.015, 121.145], # 霧社水庫座標
+        center=[24.015, 121.145], 
         zoom=13,
         height="700px",
         control_scale=True
     )
     
     # 加入捲簾功能 (Split Map)
-    # 左邊：Google 衛星影像 (可以看到真實的地貌、淤積)
-    # 右邊：Google 街道地圖 (可以看到路名、地標)
+    # 左邊：Google 衛星影像
+    # 右邊：Google 街道地圖
     m.split_map(
         left_layer="SATELLITE", 
         right_layer="ROADMAP"
     )
     
-    # 加入文字標記 (讓使用者知道哪邊是哪邊)
+    # 加入文字標記
     m.add_text("衛星影像", position="bottomleft")
     m.add_text("街道地圖", position="bottomright")
     
@@ -47,8 +46,8 @@ def Page():
                 又稱碧湖，是台14甲線前往清境與武嶺的必經之地。
                 
                 **觀察重點：**
-                1. **水庫淤積**：透過衛星影像，可觀察濁水溪上游帶來的泥沙淤積情形（特別是靠近萬大電廠處）。
-                2. **開發邊界**：比較右側地圖上的道路與左側衛星圖中的開墾地，觀察清境地區的開發範圍。
+                1. **水庫淤積**：透過衛星影像，可觀察濁水溪上游帶來的泥沙淤積情形。
+                2. **開發邊界**：比較右側地圖上的道路與左側衛星圖中的開墾地。
                 """)
                 
             solara.Markdown("---")
@@ -57,7 +56,7 @@ def Page():
         # --- 右側：捲簾地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
-                # 2D 地圖使用 element() 或 to_solara() 都可以，這裡統一用 to_solara
-                map_object.to_solara()
+                # ★★★ 關鍵修正：2D 地圖要用 element() ★★★
+                map_object.element()
 
 Page()
