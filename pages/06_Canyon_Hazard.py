@@ -1,4 +1,4 @@
-def create_canyon_map():
+def create_Canyon_Hazard():
     # 燕子口座標
     YANZIKOU_CENTER = [121.568, 24.173]
     
