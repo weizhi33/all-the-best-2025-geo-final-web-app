@@ -7,6 +7,7 @@ def create_guide_map():
     # 定位在整條路線的中心
     CENTER = [24.16, 121.32]
     
+    # 建立 2D 地圖
     m = leafmap.Map(
         center=CENTER,
         zoom=10,
@@ -22,7 +23,7 @@ def create_guide_map():
             "name": "⛽ 清境加油站 (最後補給)", 
             "coords": [24.045, 121.162], 
             "desc": "上山前最後一個大型加油站，建議在此加滿。",
-            "icon": "tachometer",  # 換一個 FA4 通用圖標
+            "icon": "tachometer", 
             "color": "red"
         },
         {
@@ -62,14 +63,14 @@ def create_guide_map():
         }
     ]
     
-    # 3. 迴圈加入標記 (修正版：針對 2D 地圖的寫法)
+    # 3. 迴圈加入標記
     for p in points:
-        # 建立 HTML Widget (這是 2D 地圖 popup 的要求)
+        # [修正 1] 建立 HTML Widget (解決 TraitError)
         popup_widget = widgets.HTML(
             value=f"<b>{p['name']}</b><br>{p['desc']}"
         )
         
-        # 建立 Icon 物件
+        # [修正 1] 建立 Icon 物件
         icon_obj = AwesomeIcon(
             name=p["icon"], 
             marker_color=p["color"], 
@@ -79,8 +80,8 @@ def create_guide_map():
         m.add_marker(
             location=p["coords"],
             draggable=False,
-            popup=popup_widget,  # 這裡傳入 widget 物件
-            icon=icon_obj,       # 這裡傳入 icon 物件
+            popup=popup_widget,
+            icon=icon_obj,
             title=p["name"]
         )
         
@@ -131,7 +132,11 @@ def Page():
         # --- 右側：地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
-                # 2D 地圖使用 element()
-                map_object.element()
+                # [修正 2] 關鍵！使用 solara.Column 包覆地圖 widget，解決跑版問題
+                # 參考 pages/02 的成功解法
+                solara.Column(
+                    children=[map_object], 
+                    style={"width": "100%", "height": "700px"}
+                )
 
 Page()
