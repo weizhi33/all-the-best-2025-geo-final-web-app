@@ -48,33 +48,37 @@ STORY_STEPS = [
 # --- 2. Solara 狀態管理 ---
 current_step = solara.reactive(0)
 
-# --- 3. 地圖創建函數 ---
+# --- 3. 地圖創建函數 (更新版：純淨衛星地圖) ---
 def create_story_map(step_index):
     step_data = STORY_STEPS[step_index]
     
+    # 建立地圖
     m = leafmap.Map(
         center=step_data["location"],
         zoom=step_data["zoom"],
         pitch=step_data["pitch"],
         bearing=0,
-        style="liberty", # 基礎樣式
+        style="liberty", 
         height="600px"
     )
     
-    # [新增] Google Hybrid 衛星混合圖層
-    m.add_source("google-hybrid", {
+    # 1. [修正] 改用 Google Satellite (純衛星，無標籤)
+    # 關鍵參數：lyrs=s (原本是 y)
+    m.add_source("google-satellite", {
         "type": "raster",
-        "tiles": ["https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"],
+        "tiles": ["https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"],
         "tileSize": 256
     })
+    
+    # 2. 加入圖層
     m.add_layer({
-        "id": "google-hybrid-layer",
+        "id": "google-satellite-layer",
         "type": "raster",
-        "source": "google-hybrid",
+        "source": "google-satellite",
         "paint": {"raster-opacity": 1.0}
     })
     
-    # 加入地形
+    # 3. 加入地形
     m.add_source("aws-terrain", {
         "type": "raster-dem",
         "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
@@ -83,7 +87,7 @@ def create_story_map(step_index):
     })
     m.set_terrain({"source": "aws-terrain", "exaggeration": 1.5})
     
-    # 加入標記
+    # 4. 加入標記 (維持我們設計好的樣式)
     popup_html = f"""
         <div style="font-weight: bold; font-size: 15px; color: #333; font-family: sans-serif;">
             📍 {step_data['marker_text']}
