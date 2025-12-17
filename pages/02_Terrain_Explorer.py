@@ -28,16 +28,16 @@ def create_3d_map(view_key):
         pitch=view["pitch"],
         bearing=view["bearing"],
         style="liberty",
-        height="700px"  # <--- 關鍵修正：改回固定高度，地圖就會出現了！
+        height="700px"
     )
 
-    # 1. 加入 Google 純衛星圖 (無標籤)
+    # 1. 第一層：Google 純衛星圖 (底圖)
+    # lyrs=s (Satellite only)
     m.add_source("google-satellite", {
         "type": "raster",
         "tiles": ["https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"],
         "tileSize": 256
     })
-    
     m.add_layer({
         "id": "google-satellite-layer",
         "type": "raster",
@@ -45,14 +45,29 @@ def create_3d_map(view_key):
         "paint": {"raster-opacity": 1.0}
     })
 
-    # 2. 加入地形
+    # 2. [新增] 第二層：Google 純路網 (透明疊加層)
+    # lyrs=h (Hybrid roads only) - 這層只有路和字，背景透明
+    m.add_source("google-roads", {
+        "type": "raster",
+        "tiles": ["https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}"],
+        "tileSize": 256
+    })
+    m.add_layer({
+        "id": "google-roads-layer",
+        "type": "raster",
+        "source": "google-roads",
+        "paint": {
+            "raster-opacity": 0.8  # 設定 0.8 讓路網稍微柔和一點，不要蓋過山脈的質感
+        }
+    })
+
+    # 3. 加入 3D 地形 (讓地圖凸起來)
     m.add_source("aws-terrain", {
         "type": "raster-dem",
         "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
         "tileSize": 256,
         "encoding": "terrarium"
     })
-    
     m.set_terrain({
         "source": "aws-terrain", 
         "exaggeration": 1.5 
