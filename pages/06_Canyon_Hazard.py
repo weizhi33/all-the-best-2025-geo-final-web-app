@@ -1,12 +1,15 @@
-def create_Canyon_Hazard():
+import solara
+import leafmap.maplibregl as leafmap
+
+def create_canyon_map():
     # 燕子口座標
     YANZIKOU_CENTER = [121.568, 24.173]
     
     m = leafmap.Map(
         center=YANZIKOU_CENTER,
-        zoom=16.5,     # 距離稍微拉近一點，比較有臨場感
-        pitch=75,      # 仰角
-        bearing=-80,   # 視角方向
+        zoom=16.5,
+        pitch=75,
+        bearing=-80,
         style="liberty",
         height="700px"
     )
@@ -33,28 +36,24 @@ def create_Canyon_Hazard():
     })
     m.set_terrain({"source": "aws-terrain", "exaggeration": 2.0})
 
-    # 3. [修正] 使用 "Polygon" (多邊形) 繪製符合河道的堰塞湖
-    # 這是手動沿著燕子口河道描繪的 S 型座標
+    # 3. 堰塞湖多邊形
     LAKE_POLYGON = [
         [
-            [121.5695, 24.1728], # 堵塞點 (下游)
-            [121.5680, 24.1735], # 往上游繞
-            [121.5660, 24.1725], # 轉彎處
-            [121.5640, 24.1730], # 靳珩橋附近
-            [121.5620, 24.1745], # 更上游
-            [121.5610, 24.1750], # 湖尾端 (迴頭彎)
-            
-            # --- 以下是河對岸 (繞回來) ---
+            [121.5695, 24.1728],
+            [121.5680, 24.1735],
+            [121.5660, 24.1725],
+            [121.5640, 24.1730],
+            [121.5620, 24.1745],
+            [121.5610, 24.1750],
             [121.5615, 24.1740], 
             [121.5630, 24.1725],
             [121.5655, 24.1718],
             [121.5675, 24.1728],
             [121.5690, 24.1722],
-            [121.5695, 24.1728]  # 閉合回到原點
+            [121.5695, 24.1728]
         ]
     ]
     
-    # 加入水域 (使用 fill-extrusion 讓水有一點厚度，或者用單純的 fill)
     m.add_geojson({
         "type": "Feature",
         "geometry": {
@@ -63,20 +62,18 @@ def create_Canyon_Hazard():
         },
         "properties": {"name": "模擬堰塞湖"}
     }, layer_type="fill", paint={
-        "fill-color": "#0099ff",  # 鮮豔的藍色
-        "fill-opacity": 0.6,      # 半透明，看得到底下的石頭
-        "fill-outline-color": "#ffffff" # 白色邊框
+        "fill-color": "#0099ff",
+        "fill-opacity": 0.6,
+        "fill-outline-color": "#ffffff"
     })
 
-    # 4. 加入災害標記
-    # 堵塞點
+    # 4. 災害標記
     popup_html = """<div style="font-size: 16px; font-weight: bold;">⛔ 堵塞點</div>"""
     m.add_marker(
         lng_lat=[121.5695, 24.1725],
         popup={"html": popup_html}
     )
     
-    # 靳珩公園
     m.add_marker(
         lng_lat=[121.561, 24.174], 
         popup={"content": "靳珩公園 (淹沒區)"}
@@ -84,3 +81,30 @@ def create_Canyon_Hazard():
 
     m.add_layer_control()
     return m
+
+# ★★★ 關鍵在這裡！主函數一定要叫 Page ★★★
+@solara.component
+def Page():
+    map_object = solara.use_memo(create_canyon_map, dependencies=[])
+
+    solara.Title("峽谷災害模擬")
+
+    with solara.Columns([1, 3]):
+        with solara.Column(style={"padding": "20px", "background-color": "#fff0f0", "height": "100%"}):
+            solara.Markdown("## ⚠️ 致命的美景：堰塞湖危機")
+            solara.Markdown("燕子口是太魯閣峽谷最壯麗、也是最危險的路段。")
+            solara.Markdown("---")
+            with solara.Card("🔥 災害劇本模擬", margin=0, elevation=1):
+                solara.Markdown("""
+                **情境：** 當強震或豪雨導致大量落石崩塌。
+                **1. 瓶頸效應 (⚠️)** 燕子口河道極窄，崩落巨石易堵住河口。
+                **2. 堰塞湖形成 (🟦)** 藍色區域顯示回水範圍。
+                **3. 潰壩瞬間** 水壓衝破土石壩將對下游造成毀滅性打擊。
+                """)
+            solara.Markdown("---")
+            solara.Markdown("### 🧐 地形觀察")
+            solara.Markdown("地圖已開啟 **2.0倍地形誇張**。")
+
+        with solara.Column(style={"height": "750px", "padding": "0"}):
+            with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
+                map_object.to_solara()
