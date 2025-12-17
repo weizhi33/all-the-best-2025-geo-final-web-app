@@ -1,27 +1,25 @@
 import solara
 import leafmap.maplibregl as leafmap
 
-# --- 定義觀察點位 (讓左側選單可以控制地圖) ---
+# --- 定義觀察點位 ---
 VIEW_POINTS = {
     "overview": {
         "center": [121.276, 24.137], "zoom": 11, "pitch": 60, "bearing": 30
     },
-    "puli": { # 埔里盆地爬升
+    "puli": { 
         "center": [121.05, 24.00], "zoom": 12, "pitch": 70, "bearing": 80
     },
-    "liwu": { # 立霧溪侵蝕
+    "liwu": { 
         "center": [121.50, 24.18], "zoom": 12, "pitch": 60, "bearing": -45
     },
-    "hehuanshan": { # 合歡山單面山
+    "hehuanshan": { 
         "center": [121.28, 24.14], "zoom": 14, "pitch": 75, "bearing": 160
     }
 }
 
-# 使用 Reactive 變數來控制地圖視角
 current_view = solara.reactive("overview")
 
 def create_3d_map(view_key):
-    # 取得目前的視角參數
     view = VIEW_POINTS.get(view_key, VIEW_POINTS["overview"])
     
     m = leafmap.Map(
@@ -30,7 +28,7 @@ def create_3d_map(view_key):
         pitch=view["pitch"],
         bearing=view["bearing"],
         style="liberty",
-        height="100%"
+        height="700px"  # <--- 關鍵修正：改回固定高度，地圖就會出現了！
     )
 
     # 1. 加入 Google 純衛星圖 (無標籤)
@@ -65,7 +63,6 @@ def create_3d_map(view_key):
 
 @solara.component
 def Page():
-    # 當 current_view 改變時，地圖會重繪並飛到新位置
     map_object = solara.use_memo(
         lambda: create_3d_map(current_view.value), 
         dependencies=[current_view.value]
@@ -83,7 +80,6 @@ def Page():
             solara.Markdown("---")
             solara.Markdown("### 🧐 點擊切換視角")
             
-            # 使用按鈕或可點擊的區域來切換視角
             with solara.Card(margin=0, elevation=1):
                 with solara.Column(gap="10px"):
                     solara.Button("1. 全覽視角 (武嶺)", 
