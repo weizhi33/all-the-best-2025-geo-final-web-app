@@ -2,14 +2,18 @@ import solara
 import leafmap.maplibregl as leafmap
 
 def create_canyon_map():
-    # 燕子口座標 (峽谷最窄處)
+    # 燕子口座標
     YANZIKOU_CENTER = [121.568, 24.173]
     
     m = leafmap.Map(
         center=YANZIKOU_CENTER,
-        zoom=15,
-        pitch=80,      # 視角拉得非常平，像是在抬頭看峽谷
-        bearing=-80,   # 轉個角度，順著河流看進去
+        
+        # ▼▼▼ 修改這裡 ▼▼▼
+        zoom=16.8,     # 原本是 15，改成 16.8 (數字越大越近)
+        # ▲▲▲ 修改這裡 ▲▲▲
+        
+        pitch=80,      # 維持這個仰角，才有抬頭看峽谷的感覺
+        bearing=-80,   # 視角方向
         style="liberty",
         height="700px"
     )
