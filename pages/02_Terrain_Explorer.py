@@ -1,21 +1,53 @@
 import solara
 import leafmap.maplibregl as leafmap
 
-# 武嶺座標
-WULING_CENTER = [121.276, 24.137]
+# --- 定義觀察點位 (讓左側選單可以控制地圖) ---
+VIEW_POINTS = {
+    "overview": {
+        "center": [121.276, 24.137], "zoom": 11, "pitch": 60, "bearing": 30
+    },
+    "puli": { # 埔里盆地爬升
+        "center": [121.05, 24.00], "zoom": 12, "pitch": 70, "bearing": 80
+    },
+    "liwu": { # 立霧溪侵蝕
+        "center": [121.50, 24.18], "zoom": 12, "pitch": 60, "bearing": -45
+    },
+    "hehuanshan": { # 合歡山單面山
+        "center": [121.28, 24.14], "zoom": 14, "pitch": 75, "bearing": 160
+    }
+}
 
-def create_3d_map():
-    # 建立地圖
+# 使用 Reactive 變數來控制地圖視角
+current_view = solara.reactive("overview")
+
+def create_3d_map(view_key):
+    # 取得目前的視角參數
+    view = VIEW_POINTS.get(view_key, VIEW_POINTS["overview"])
+    
     m = leafmap.Map(
-        center=WULING_CENTER,
-        zoom=11,
-        pitch=60,       # 傾斜 60 度
-        bearing=30,     # 旋轉 30 度
-        style="positron",
-        height="700px"  # 固定高度確保顯示
+        center=view["center"],
+        zoom=view["zoom"],
+        pitch=view["pitch"],
+        bearing=view["bearing"],
+        style="liberty",
+        height="100%"
     )
 
-    # 加入地形來源
+    # 1. 加入 Google 純衛星圖 (無標籤)
+    m.add_source("google-satellite", {
+        "type": "raster",
+        "tiles": ["https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"],
+        "tileSize": 256
+    })
+    
+    m.add_layer({
+        "id": "google-satellite-layer",
+        "type": "raster",
+        "source": "google-satellite",
+        "paint": {"raster-opacity": 1.0}
+    })
+
+    # 2. 加入地形
     m.add_source("aws-terrain", {
         "type": "raster-dem",
         "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
@@ -23,7 +55,6 @@ def create_3d_map():
         "encoding": "terrarium"
     })
     
-    # 設定地形
     m.set_terrain({
         "source": "aws-terrain", 
         "exaggeration": 1.5 
@@ -34,39 +65,49 @@ def create_3d_map():
 
 @solara.component
 def Page():
-    map_object = solara.use_memo(create_3d_map, dependencies=[])
+    # 當 current_view 改變時，地圖會重繪並飛到新位置
+    map_object = solara.use_memo(
+        lambda: create_3d_map(current_view.value), 
+        dependencies=[current_view.value]
+    )
 
     solara.Title("3D 地形探索")
 
-    # 使用兩欄式佈局
     with solara.Columns([1, 3]):
         
-        # --- 左側：導覽資訊 ---
+        # --- 左側：導覽控制 ---
         with solara.Column(style={"padding": "20px", "background-color": "#f8f9fa", "height": "100%"}):
             solara.Markdown("## 🦅 雲端上的公路")
             solara.Markdown("這條路線穿越了台灣的屋脊。透過 3D 視角，我們可以觀察到劇烈的地形起伏。")
             
             solara.Markdown("---")
+            solara.Markdown("### 🧐 點擊切換視角")
             
-            with solara.Card("🎮 如何操作", margin=0, elevation=1):
-                solara.Markdown("""
-                * **旋轉**：按住 `滑鼠右鍵` 拖曳
-                * **平移**：按住 `滑鼠左鍵` 拖曳
-                * **縮放**：滾動滑鼠滾輪
-                """)
-            
+            # 使用按鈕或可點擊的區域來切換視角
+            with solara.Card(margin=0, elevation=1):
+                with solara.Column(gap="10px"):
+                    solara.Button("1. 全覽視角 (武嶺)", 
+                                 on_click=lambda: current_view.set("overview"), 
+                                 text=True, outlined=True)
+                    
+                    solara.Button("2. 埔里的爬升", 
+                                 on_click=lambda: current_view.set("puli"), 
+                                 text=True, outlined=True)
+                    
+                    solara.Button("3. 立霧溪峽谷", 
+                                 on_click=lambda: current_view.set("liwu"), 
+                                 text=True, outlined=True)
+                    
+                    solara.Button("4. 合歡山單面山", 
+                                 on_click=lambda: current_view.set("hehuanshan"), 
+                                 text=True, outlined=True)
+
             solara.Markdown("---")
-            solara.Markdown("### 🧐 觀察重點")
-            
-            # [修正] 改用 solara.Details (這是標準的摺疊元件)
-            with solara.Details(summary="1. 劇烈的爬升"):
-                solara.Markdown("從埔里(450m) 到 武嶺(3275m)，短短 50 公里內爬升了近 3000 公尺。")
-                
-            with solara.Details(summary="2. 立霧溪的襲奪"):
-                solara.Markdown("往東看，可以看到立霧溪向源侵蝕造成的險峻峽谷（太魯閣）。")
-                
-            with solara.Details(summary="3. 單面山地形"):
-                solara.Markdown("合歡山東峰與主峰呈現明顯的單面山地形，東側陡峭、西側平緩。")
+            with solara.Details(summary="💡 地理小知識"):
+                solara.Markdown("""
+                * **單面山**：合歡東峰東側陡峭、西側平緩，是典型的單面山地形。
+                * **向源侵蝕**：立霧溪強烈的下切力量，造就了太魯閣峽谷。
+                """)
 
         # --- 右側：3D 地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
