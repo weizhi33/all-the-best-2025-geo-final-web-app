@@ -39,7 +39,7 @@ def create_canyon_map():
         "tileSize": 256,
         "encoding": "terrarium"
     })
-    m.set_terrain({"source": "aws-terrain", "exaggeration": 3.0})
+    m.set_terrain({"source": "aws-terrain", "exaggeration": 2.0})
 
     # 3. [模擬] 繪製堰塞湖水域 (假設水位上升)
     # 這是一條沿著河道往上游延伸的粗線，代表積水區
