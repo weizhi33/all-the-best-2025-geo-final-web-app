@@ -17,12 +17,10 @@ VIEW_POINTS = {
     }
 }
 
-# 1. 新增：地形誇張度變數 (預設 1.5)
+# 地形誇張度變數 (預設 1.5)
 terrain_exaggeration = solara.reactive(1.5)
-
 current_view = solara.reactive("overview")
 
-# 接收 exaggeration 參數
 def create_3d_map(view_key, exaggeration_value):
     view = VIEW_POINTS.get(view_key, VIEW_POINTS["overview"])
     
@@ -61,7 +59,7 @@ def create_3d_map(view_key, exaggeration_value):
         "paint": {"raster-opacity": 0.8}
     })
 
-    # 2. 地形來源
+    # 地形來源
     m.add_source("aws-terrain", {
         "type": "raster-dem",
         "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
@@ -69,10 +67,10 @@ def create_3d_map(view_key, exaggeration_value):
         "encoding": "terrarium"
     })
     
-    # 3. 設定地形 (使用滑桿傳進來的數值!)
+    # 設定地形 (使用傳入的誇張值)
     m.set_terrain({
         "source": "aws-terrain", 
-        "exaggeration": exaggeration_value  # <--- 這裡是關鍵
+        "exaggeration": exaggeration_value 
     })
 
     m.add_layer_control()
@@ -80,7 +78,7 @@ def create_3d_map(view_key, exaggeration_value):
 
 @solara.component
 def Page():
-    # 當 slider 拉動時，地圖會重新計算
+    # 建立地圖物件
     map_object = solara.use_memo(
         lambda: create_3d_map(current_view.value, terrain_exaggeration.value), 
         dependencies=[current_view.value, terrain_exaggeration.value]
@@ -97,21 +95,18 @@ def Page():
             
             solara.Markdown("---")
             
-            # ★★★ 新增：GIS 實驗室 (God Mode) ★★★
             with solara.Card("🧪 GIS 實驗室：地形誇張", margin=0, elevation=1):
                 solara.Markdown("調整山脈的「垂直誇張度」，看看地形有什麼變化！")
                 
-                # 滑桿：從 0 (平地) 到 4 (超誇張高山)
                 solara.SliderFloat(
                     label="地形倍率", 
                     value=terrain_exaggeration, 
                     min=0.0, 
                     max=4.0, 
-                    step=0.1
+                    step=0.5 # 改成 0.5 一格，比較不會頻繁閃爍
                 )
                 
-                # 顯示目前的數值
-                solara.Markdown(f"目前倍率：**{terrain_exaggeration.value:.1f}x**")
+                solara.Markdown(f"目前倍率：**{terrain_exaggeration.value}x**")
                 
                 if terrain_exaggeration.value > 2.5:
                     solara.Warning("小心！這已經比喜馬拉雅山還陡了！")
@@ -137,6 +132,11 @@ def Page():
         # --- 右側：3D 地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
-                map_object.to_solara()
+                # ▼▼▼ 關鍵修正：加入 key 參數，強制地圖重繪 ▼▼▼
+                solara.Column(
+                    children=[map_object], 
+                    style={"width": "100%", "height": "700px"},
+                    key=f"terrain-map-{terrain_exaggeration.value}-{current_view.value}"
+                )
 
 Page()
