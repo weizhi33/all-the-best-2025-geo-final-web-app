@@ -59,20 +59,22 @@ def create_3d_map(view_key, exaggeration_value):
         "paint": {"raster-opacity": 0.8}
     })
 
-    # 3. [修正] 地形來源 (改用 MapLibre 官方源，保證 3D!)
-    # 這裡修正了兩個地方：
-    # (1) 改用 MapLibre Demo Tiles (格式最標準)
-    # (2) 使用 'tiles' 參數而不是 'url'，這是關鍵錯誤修正
-    m.add_source("terrain-source", {
+    # 3. [修正重點] 地形來源設定
+    # 這裡是最容易出錯的地方，參數必須完全精準
+    m.add_source("aws-terrain-source", {
         "type": "raster-dem",
-        "tiles": ["https://demotiles.maplibre.org/terrain-tiles/{z}/{x}/{y}.png"],
-        "tileSize": 256
+        # 注意：對於 XYZ 連結，必須使用 'tiles' (陣列)，不能用 'url'
+        "tiles": ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        # 注意：AWS 必須指定 encoding 為 'terrarium'，否則高度會算錯
+        "encoding": "terrarium",
+        "tileSize": 256,
+        "maxzoom": 15
     })
     
-    # 4. 設定地形 (exaggeration 現在會生效了!)
+    # 4. 設定地形 (exaggeration)
     m.set_terrain({
-        "source": "terrain-source", 
-        "exaggeration": exaggeration_value 
+        "source": "aws-terrain-source", 
+        "exaggeration": float(exaggeration_value) # 強制轉成 float 確保相容
     })
 
     m.add_layer_control()
@@ -104,7 +106,7 @@ def Page():
                     label="地形倍率", 
                     value=terrain_exaggeration, 
                     min=0.0, 
-                    max=4.0, 
+                    max=5.0, 
                     step=0.5
                 )
                 
@@ -112,6 +114,8 @@ def Page():
                 
                 if terrain_exaggeration.value > 2.5:
                     solara.Warning("小心！這已經比喜馬拉雅山還陡了！")
+                if terrain_exaggeration.value == 0:
+                    solara.Info("現在是完全平坦的 2D 模式。")
 
             solara.Markdown("---")
             solara.Markdown("### 🧐 點擊切換視角")
@@ -134,11 +138,12 @@ def Page():
         # --- 右側：3D 地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
-                # 使用 solara.Div + key 來強制刷新
+                # 使用 solara.Div + key 強制刷新
                 solara.Div(
                     children=[map_object], 
                     style={"width": "100%", "height": "700px"},
-                    key=f"terrain-map-{terrain_exaggeration.value}-{current_view.value}"
+                    # key 的作用是讓 React 認為這是一個全新的元件，進而強制重繪
+                    key=f"map-{terrain_exaggeration.value}-{current_view.value}"
                 )
 
 Page()
