@@ -17,9 +17,13 @@ VIEW_POINTS = {
     }
 }
 
+# 1. 新增：地形誇張度變數 (預設 1.5)
+terrain_exaggeration = solara.reactive(1.5)
+
 current_view = solara.reactive("overview")
 
-def create_3d_map(view_key):
+# 接收 exaggeration 參數
+def create_3d_map(view_key, exaggeration_value):
     view = VIEW_POINTS.get(view_key, VIEW_POINTS["overview"])
     
     m = leafmap.Map(
@@ -31,8 +35,7 @@ def create_3d_map(view_key):
         height="700px"
     )
 
-    # 1. 第一層：Google 純衛星圖 (底圖)
-    # lyrs=s (Satellite only)
+    # 衛星圖層
     m.add_source("google-satellite", {
         "type": "raster",
         "tiles": ["https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"],
@@ -45,8 +48,7 @@ def create_3d_map(view_key):
         "paint": {"raster-opacity": 1.0}
     })
 
-    # 2. [新增] 第二層：Google 純路網 (透明疊加層)
-    # lyrs=h (Hybrid roads only) - 這層只有路和字，背景透明
+    # 路網圖層
     m.add_source("google-roads", {
         "type": "raster",
         "tiles": ["https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}"],
@@ -56,21 +58,21 @@ def create_3d_map(view_key):
         "id": "google-roads-layer",
         "type": "raster",
         "source": "google-roads",
-        "paint": {
-            "raster-opacity": 0.8  # 設定 0.8 讓路網稍微柔和一點，不要蓋過山脈的質感
-        }
+        "paint": {"raster-opacity": 0.8}
     })
 
-    # 3. 加入 3D 地形 (讓地圖凸起來)
+    # 2. 地形來源
     m.add_source("aws-terrain", {
         "type": "raster-dem",
         "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
         "tileSize": 256,
         "encoding": "terrarium"
     })
+    
+    # 3. 設定地形 (使用滑桿傳進來的數值!)
     m.set_terrain({
         "source": "aws-terrain", 
-        "exaggeration": 1.5 
+        "exaggeration": exaggeration_value  # <--- 這裡是關鍵
     })
 
     m.add_layer_control()
@@ -78,20 +80,42 @@ def create_3d_map(view_key):
 
 @solara.component
 def Page():
+    # 當 slider 拉動時，地圖會重新計算
     map_object = solara.use_memo(
-        lambda: create_3d_map(current_view.value), 
-        dependencies=[current_view.value]
+        lambda: create_3d_map(current_view.value, terrain_exaggeration.value), 
+        dependencies=[current_view.value, terrain_exaggeration.value]
     )
 
     solara.Title("3D 地形探索")
 
     with solara.Columns([1, 3]):
         
-        # --- 左側：導覽控制 ---
+        # --- 左側：控制面板 ---
         with solara.Column(style={"padding": "20px", "background-color": "#f8f9fa", "height": "100%"}):
             solara.Markdown("## 🦅 雲端上的公路")
-            solara.Markdown("這條路線穿越了台灣的屋脊。透過 3D 視角，我們可以觀察到劇烈的地形起伏。")
+            solara.Markdown("這條路線穿越了台灣的屋脊。")
             
+            solara.Markdown("---")
+            
+            # ★★★ 新增：GIS 實驗室 (God Mode) ★★★
+            with solara.Card("🧪 GIS 實驗室：地形誇張", margin=0, elevation=1):
+                solara.Markdown("調整山脈的「垂直誇張度」，看看地形有什麼變化！")
+                
+                # 滑桿：從 0 (平地) 到 4 (超誇張高山)
+                solara.SliderFloat(
+                    label="地形倍率", 
+                    value=terrain_exaggeration, 
+                    min=0.0, 
+                    max=4.0, 
+                    step=0.1
+                )
+                
+                # 顯示目前的數值
+                solara.Markdown(f"目前倍率：**{terrain_exaggeration.value:.1f}x**")
+                
+                if terrain_exaggeration.value > 2.5:
+                    solara.Warning("小心！這已經比喜馬拉雅山還陡了！")
+
             solara.Markdown("---")
             solara.Markdown("### 🧐 點擊切換視角")
             
@@ -100,25 +124,15 @@ def Page():
                     solara.Button("1. 全覽視角 (武嶺)", 
                                  on_click=lambda: current_view.set("overview"), 
                                  text=True, outlined=True)
-                    
                     solara.Button("2. 埔里的爬升", 
                                  on_click=lambda: current_view.set("puli"), 
                                  text=True, outlined=True)
-                    
                     solara.Button("3. 立霧溪峽谷", 
                                  on_click=lambda: current_view.set("liwu"), 
                                  text=True, outlined=True)
-                    
                     solara.Button("4. 合歡山單面山", 
                                  on_click=lambda: current_view.set("hehuanshan"), 
                                  text=True, outlined=True)
-
-            solara.Markdown("---")
-            with solara.Details(summary="💡 地理小知識"):
-                solara.Markdown("""
-                * **單面山**：合歡東峰東側陡峭、西側平緩，是典型的單面山地形。
-                * **向源侵蝕**：立霧溪強烈的下切力量，造就了太魯閣峽谷。
-                """)
 
         # --- 右側：3D 地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
