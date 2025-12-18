@@ -6,30 +6,29 @@ def create_end_map():
     # 立霧溪出海口
     ESTUARY_CENTER = [24.135, 121.650]
     
-    # --- 定義圖源大對決 ---
+    # --- 定義圖源 (使用保證能跑的全球伺服器) ---
     
-    # 1. 左側：1944 年美軍地形圖 (US Army Map)
-    # 這張圖比 1904 年的更接近現代一點，海岸線描繪非常清晰
-    # 來源：台灣國土測繪中心 WMTS
-    URL_HISTORY = "https://wmts.nlsc.gov.tw/wmts/AM50K_1944/default/GoogleMapsCompatible/{z}/{y}/{x}"
+    # 1. 左側：ESRI 世界地形圖 (紙本風格)
+    # 這張圖有很強的「傳統地圖感」，且伺服器全球穩定，不會擋 IP
+    URL_PAPER_MAP = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
     
-    # 2. 右側：Google 衛星 (現代)
+    # 2. 右側：Google 衛星 (現代真實)
     URL_SATELLITE = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
 
     m = leafmap.split_map(
-        left_layer=URL_HISTORY,
+        left_layer=URL_PAPER_MAP,
         right_layer=URL_SATELLITE,
-        left_label="1944年 (美軍地圖)",
-        right_label="2024年 (現代衛星)",
+        left_label="地形圖 (理想骨架)",
+        right_label="衛星圖 (現實樣貌)",
         center=ESTUARY_CENTER,
         zoom=14,
         control_position="bottomleft"
     )
     
-    # --- 關鍵：保留紅色虛線 (1950s 海岸線推估) ---
+    # --- 關鍵保留：紅色虛線 (1950s 海岸線推估) ---
     HISTORIC_COAST = [
         [24.155, 121.652], # 北端
-        [24.145, 121.660], # 當時的河口尖端
+        [24.145, 121.660], # 立霧溪口 (最突出的地方)
         [24.130, 121.665], # 南端
         [24.120, 121.662]
     ]
@@ -43,7 +42,6 @@ def create_end_map():
         name="1950s海岸線"
     )
     
-    # 把紅線加上去！
     m.add_layer(line)
     
     m.layout.height = "700px"
@@ -59,32 +57,31 @@ def Page():
         
         # --- 左側：結語 ---
         with solara.Column(style={"padding": "20px", "background-color": "#eef6fc", "height": "100%"}):
-            solara.Markdown("## ⏳ 穿越時空的海岸線")
-            solara.Markdown("我們結合了 **古地圖** 與 **歷史推估線**，還原立霧溪口的原始樣貌。")
+            solara.Markdown("## ⏳ 理想 vs 現實")
+            solara.Markdown("由於歷史圖資伺服器限制，我們改用**紙本地形圖**與**現代衛星**進行對照，並透過**紅線**標示變遷。")
             
             solara.Markdown("---")
             
-            with solara.Card("📜 左圖：1944 年 (美軍繪製)", margin=0, elevation=1):
+            with solara.Card("🗺️ 左圖：紙本地形圖", margin=0, elevation=1):
                 solara.Markdown("""
-                這是二戰期間美軍繪製的台灣地形圖。
+                這張圖展示了立霧溪沖積扇的**「幾何骨架」**。
                 
+                您可以清楚看到等高線描繪出的半圓形結構，這是大自然最原始的堆積形狀，沒有受到太多人為干擾的理想狀態。
+                """)
+            
+            solara.Markdown("---")
+            
+            with solara.Card("🛰️ 右圖：現代衛星", margin=0, elevation=1):
+                solara.Markdown("""
                 **觀察重點：**
-                * **清晰的扇狀地**：你可以看到當時的立霧溪口，是一個沒有被切割的完整扇形。
-                * **海岸位置**：請注意圖中的黑色海岸線，它與右邊的現代衛星圖有顯著差異。
-                """)
-            
-            solara.Markdown("---")
-            
-            with solara.Card("🔴 紅線：消逝的國土", margin=0, elevation=1):
-                solara.Markdown("""
-                地圖上的 **紅色虛線** 代表 1950 年代推估的海岸位置。
+                * **陰陽海**：混濁溪水注入太平洋的壯觀景象。
+                * **紅色虛線 (1950s)**：這條線標示了過去的海岸位置。請拖曳滑桿，你會發現紅線現在已經**「懸浮在海上」**了。
                 
-                **為什麼海岸會後退？**
-                當你在右側衛星圖看到 **「亞洲水泥廠」** 的港口與防波堤時，就能找到答案。人為設施阻擋了沿岸漂沙的補給，加上上游水壩攔砂，導致大海開始「吃掉」陸地。
+                這證明了隨著上游攔砂與港口建設，陸地正在被大海收回。
                 """)
                 
             solara.Markdown("---")
-            solara.Info("💡 操作：拖曳中間滑桿。你會發現紅線（舊海岸）現在已經懸浮在海面上了！")
+            solara.Info("💡 為什麼之前的圖跑不出來？因為 Hugging Face 伺服器在國外，被台灣的歷史圖資網站阻擋了連線。")
 
         # --- 右側：地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
