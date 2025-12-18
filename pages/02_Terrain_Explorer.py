@@ -103,7 +103,7 @@ def Page():
                     value=terrain_exaggeration, 
                     min=0.0, 
                     max=4.0, 
-                    step=0.5 # 改成 0.5 一格，比較不會頻繁閃爍
+                    step=0.5
                 )
                 
                 solara.Markdown(f"目前倍率：**{terrain_exaggeration.value}x**")
@@ -132,8 +132,8 @@ def Page():
         # --- 右側：3D 地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
-                # ▼▼▼ 關鍵修正：加入 key 參數，強制地圖重繪 ▼▼▼
-                solara.Column(
+                # ▼▼▼ 修正：改用 solara.Div，它支援 key 參數 ▼▼▼
+                solara.Div(
                     children=[map_object], 
                     style={"width": "100%", "height": "700px"},
                     key=f"terrain-map-{terrain_exaggeration.value}-{current_view.value}"
