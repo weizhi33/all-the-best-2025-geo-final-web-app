@@ -33,7 +33,7 @@ def create_3d_map(view_key, exaggeration_value):
         height="700px"
     )
 
-    # 衛星圖層
+    # 1. 衛星圖層
     m.add_source("google-satellite", {
         "type": "raster",
         "tiles": ["https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"],
@@ -46,7 +46,7 @@ def create_3d_map(view_key, exaggeration_value):
         "paint": {"raster-opacity": 1.0}
     })
 
-    # 路網圖層
+    # 2. 路網圖層
     m.add_source("google-roads", {
         "type": "raster",
         "tiles": ["https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}"],
@@ -59,17 +59,19 @@ def create_3d_map(view_key, exaggeration_value):
         "paint": {"raster-opacity": 0.8}
     })
 
-    # 地形來源
-    m.add_source("aws-terrain", {
+    # 3. [修正] 地形來源 (改用 MapLibre 官方源，保證 3D!)
+    # 這裡修正了兩個地方：
+    # (1) 改用 MapLibre Demo Tiles (格式最標準)
+    # (2) 使用 'tiles' 參數而不是 'url'，這是關鍵錯誤修正
+    m.add_source("terrain-source", {
         "type": "raster-dem",
-        "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        "tileSize": 256,
-        "encoding": "terrarium"
+        "tiles": ["https://demotiles.maplibre.org/terrain-tiles/{z}/{x}/{y}.png"],
+        "tileSize": 256
     })
     
-    # 設定地形 (使用傳入的誇張值)
+    # 4. 設定地形 (exaggeration 現在會生效了!)
     m.set_terrain({
-        "source": "aws-terrain", 
+        "source": "terrain-source", 
         "exaggeration": exaggeration_value 
     })
 
@@ -132,7 +134,7 @@ def Page():
         # --- 右側：3D 地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
-                # ▼▼▼ 修正：改用 solara.Div，它支援 key 參數 ▼▼▼
+                # 使用 solara.Div + key 來強制刷新
                 solara.Div(
                     children=[map_object], 
                     style={"width": "100%", "height": "700px"},
