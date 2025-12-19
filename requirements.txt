@@ -11,3 +11,4 @@ rioxarray
 solara
 widgetsnbextension
 jupyter-server-proxy  # <--- 請務必加上這行！
+duckdb
