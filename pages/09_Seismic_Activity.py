@@ -2,51 +2,66 @@ import solara
 import leafmap.foliumap as leafmap
 import pandas as pd
 import duckdb
-import io  # <--- 新增這個工具：專門處理記憶體內的檔案流
+import io
+import datetime
 
 # ==========================================
-# 1. 資料準備：直接從 USGS 網址讀取 (不存檔)
+# 1. 資料準備：USGS 台灣專屬歷史查詢
 # ==========================================
-# 真實資料源：過去 30 天全球規模 2.5+ 地震
-CSV_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.csv"
-
-def get_real_earthquake_data():
-    print(f"正在連線 USGS 下載真實地震資料: {CSV_URL} ...")
+def get_taiwan_earthquake_data():
+    # 動態產生今天的日期，確保資料永遠最新
+    today = datetime.date.today()
+    end_date = today.strftime("%Y-%m-%d")
+    
+    # --- USGS API 參數設定 (這就是抓多一點資料的關鍵) ---
+    # format=csv: 格式
+    # starttime=2000-01-01: 從 2000 年開始抓 (25年數據！)
+    # minmagnitude=4.0: 只抓規模 4 以上 (避免資料量爆掉，且太小的地震沒感覺)
+    # min/max lat/lon: 鎖定台灣周邊方框 (Taiwan Bounding Box)
+    api_url = (
+        f"https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv"
+        f"&starttime=2000-01-01&endtime={end_date}"
+        f"&minmagnitude=4.0"
+        f"&minlatitude=21.0&maxlatitude=26.0"
+        f"&minlongitude=119.0&maxlongitude=123.0"
+    )
+    
+    print(f"正在下載台灣 25 年地震大數據: {api_url} ...")
+    
     try:
-        # 讀取 CSV 到記憶體 DataFrame
-        df = pd.read_csv(CSV_URL)
+        df = pd.read_csv(api_url)
         
         # 資料清理
         df['time'] = pd.to_datetime(df['time'])
         df['year'] = df['time'].dt.year
-        # 排除有缺漏值的資料
         df = df.dropna(subset=['latitude', 'longitude', 'mag', 'depth'])
         
-        print(f"成功下載！共 {len(df)} 筆地震資料。")
+        print(f"下載成功！取得 {len(df)} 筆台灣真實地震資料。")
         return df
         
     except Exception as e:
         print(f"下載失敗: {e}")
-        # 回傳空表避免當機
         return pd.DataFrame(columns=['latitude', 'longitude', 'mag', 'depth', 'year', 'place'])
 
-# App 啟動時下載一次
-df_earthquakes = get_real_earthquake_data()
+# 下載資料 (只執行一次)
+df_earthquakes = get_taiwan_earthquake_data()
 
 # ==========================================
 # 2. DuckDB 查詢
 # ==========================================
-def query_earthquakes(min_mag, selected_year):
-    # 如果資料下載失敗，回傳空表
+def query_earthquakes(min_mag, selected_year_range):
     if df_earthquakes.empty:
         return df_earthquakes
 
-    # SQL 篩選：直接查全域變數 df_earthquakes
+    # 解包年份範圍 (例如: [2010, 2020])
+    start_year, end_year = selected_year_range
+
+    # SQL 篩選：使用年份範圍查詢
     query = f"""
         SELECT latitude, longitude, mag, depth, place, year
         FROM df_earthquakes 
         WHERE mag >= {min_mag} 
-        AND year = {selected_year}
+        AND year >= {start_year} AND year <= {end_year}
     """
     return duckdb.query(query).to_df()
 
@@ -55,11 +70,16 @@ def query_earthquakes(min_mag, selected_year):
 # ==========================================
 min_magnitude = solara.reactive(4.0) 
 
-# 自動判斷資料年份 (通常是 2024 或 2025)
-default_year = 2024
+# 設定年份範圍 (預設看最近 5 年)
+current_year = 2025 # 暫定
 if not df_earthquakes.empty:
-    default_year = int(df_earthquakes['year'].max())
-current_year = solara.reactive(default_year) 
+    max_y = int(df_earthquakes['year'].max())
+    min_y = int(df_earthquakes['year'].min())
+    # 預設選取範圍
+    year_range = solara.reactive([max_y - 5, max_y])
+else:
+    min_y, max_y = 2000, 2025
+    year_range = solara.reactive([2020, 2025])
 
 # ==========================================
 # 4. 頁面元件
@@ -68,89 +88,97 @@ current_year = solara.reactive(default_year)
 def Page():
     
     def calculate_map_html():
-        df = query_earthquakes(min_magnitude.value, current_year.value)
+        df = query_earthquakes(min_magnitude.value, year_range.value)
         count = len(df)
         
+        # 中心點設在台灣 (南投)
         m = leafmap.Map(
-            center=[24.15, 121.4],
-            zoom=6,
+            center=[23.8, 121.0],
+            zoom=7,
             google_map="HYBRID",
             draw_control=False,
             measure_control=False,
         )
 
         def get_color(depth):
-            if depth < 15: return "red"
-            elif depth < 70: return "orange"
-            else: return "blue"
+            if depth < 20: return "#FF3333"      # 極淺層 (紅)
+            elif depth < 50: return "#FF8800"    # 淺層 (橘)
+            elif depth < 100: return "#FFFF00"   # 中層 (黃)
+            else: return "#00CC00"               # 深層 (綠)
 
         if not df.empty:
+            # 為了效能，如果點太多 (>1000)，稍微縮小半徑
+            radius_scale = 1.0 if count < 1000 else 0.8
+            
             for _, row in df.iterrows():
                 leafmap.folium.CircleMarker(
                     location=[row['latitude'], row['longitude']],
-                    radius=row['mag'] * 1.5,
-                    color=get_color(row['depth']),
+                    # 規模越大圈越大
+                    radius=(row['mag'] ** 2) * 0.15 * radius_scale, 
+                    color=None,
                     fill=True,
                     fill_color=get_color(row['depth']),
                     fill_opacity=0.6,
-                    popup=f"<b>{row['place']}</b><br>規模: {row['mag']}<br>深度: {row['depth']}km"
+                    popup=f"<b>{row['place']}</b><br>年份: {row['year']}<br>規模: {row['mag']}<br>深度: {row['depth']}km"
                 ).add_to(m)
 
-        # ★★★ 關鍵修復：使用 io.BytesIO 取代 m.to_html() ★★★
-        # 這段程式碼會把地圖存進 RAM (fp) 而不是硬碟，避開 Permission Error
+        # 記憶體輸出 (避開 Read-only error)
         fp = io.BytesIO()
         m.save(fp, close_file=False)
         fp.seek(0)
-        
-        # 讀取並轉成字串
         map_html_str = fp.read().decode('utf-8')
         
         return map_html_str, count
 
-    # 執行運算
     map_html, count = solara.use_memo(
         calculate_map_html,
-        dependencies=[min_magnitude.value, current_year.value]
+        dependencies=[min_magnitude.value, year_range.value]
     )
-    
-    # 計算年份範圍供滑桿使用
-    years = [2024, 2025]
-    if not df_earthquakes.empty:
-        years = sorted(df_earthquakes['year'].unique().tolist())
-    min_year = min(years) if years else 2024
-    max_year = max(years) if years else 2025
 
-    solara.Title("大地的心跳：USGS 真實數據")
+    solara.Title("台灣震災史：USGS 大數據")
 
     with solara.Columns([1, 3]):
         
         # --- 左側：控制面板 ---
-        with solara.Column(style={"padding": "20px", "background-color": "#2b2b2b", "color": "#e0e0e0", "height": "100%"}):
-            solara.Markdown("## 💓 大地的心跳 (Real-Time)")
-            solara.Markdown("直接串接 **USGS** 即時資料流，並解決雲端存取權限問題。")
+        with solara.Column(style={"padding": "20px", "background-color": "#222", "color": "#eee", "height": "100%"}):
+            solara.Markdown("## 🇹🇼 台灣震災大數據")
+            solara.Markdown("透過 USGS API，我們撈取了 **2000 年至今**，發生在台灣周邊規模 4.0 以上的真實地震紀錄。")
             
             solara.Markdown("---")
             
-            with solara.Card(margin=0, elevation=1, style={"background-color": "#424242", "color": "white"}):
-                solara.Markdown("### 📡 系統狀態")
-                solara.Markdown(f"資料來源：**USGS Live Feed**")
+            with solara.Card(margin=0, elevation=1, style={"background-color": "#333", "color": "white"}):
+                solara.Markdown("### 📊 數據統計")
+                solara.Markdown(f"時間跨度：**{year_range.value[0]} - {year_range.value[1]}**")
                 solara.Markdown(f"篩選筆數：**{count}** 筆")
-                solara.Markdown(f"儲存模式：**In-Memory (RAM)**")
                 
             solara.Markdown("---")
             
-            solara.SliderInt(label="年份", value=current_year, min=min_year, max=max_year, thumb_label="always")
-            solara.SliderFloat(label="最小規模", value=min_magnitude, min=2.5, max=7.5, step=0.1, thumb_label="always")
+            # 雙頭滑桿 (Range Slider)
+            solara.Markdown("### 📅 年份範圍")
+            solara.SliderRangeInt(
+                label="", 
+                value=year_range, 
+                min=min_y, 
+                max=max_y, 
+                thumb_label="always"
+            )
+            
+            solara.Markdown("### 📉 最小規模")
+            solara.SliderFloat(
+                label="", 
+                value=min_magnitude, 
+                min=4.0, 
+                max=7.5, 
+                step=0.1, 
+                thumb_label="always"
+            )
             
             solara.Markdown("---")
-            with solara.Details(summary="🛠️ 技術解密"):
-                 solara.Markdown("""
-                 **權限錯誤修復 (Permission Error Fix)**：
-                 
-                 原本的 `to_html()` 會嘗試寫入暫存檔導致失敗。
-                 此版本改用 `io.BytesIO` 將地圖 HTML 直接寫入記憶體緩衝區，
-                 成功繞過 Hugging Face 的唯讀檔案系統限制。
-                 """)
+            solara.Markdown("### 🎨 深度圖例")
+            solara.Markdown("* <span style='color:#FF3333'>■</span> **極淺層 (<20km)**：破壞力最強")
+            solara.Markdown("* <span style='color:#FF8800'>■</span> **淺層 (20-50km)**")
+            solara.Markdown("* <span style='color:#FFFF00'>■</span> **中層 (50-100km)**")
+            solara.Markdown("* <span style='color:#00CC00'>■</span> **深層 (>100km)**")
 
         # --- 右側：地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
@@ -168,7 +196,7 @@ def Page():
                         )
                     ],
                     style={"width": "100%", "height": "700px"},
-                    key=f"seismic-fix-v4-{current_year.value}-{min_magnitude.value}"
+                    key=f"tw-quake-v1-{year_range.value}-{min_magnitude.value}"
                 )
 
 Page()
