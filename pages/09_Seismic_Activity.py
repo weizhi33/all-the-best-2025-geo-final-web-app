@@ -19,6 +19,7 @@ def get_real_earthquake_data():
         # 資料清理
         df['time'] = pd.to_datetime(df['time'])
         df['year'] = df['time'].dt.year
+        # 排除有缺漏值的資料
         df = df.dropna(subset=['latitude', 'longitude', 'mag', 'depth'])
         
         print(f"成功下載！共 {len(df)} 筆地震資料。")
@@ -26,6 +27,7 @@ def get_real_earthquake_data():
         
     except Exception as e:
         print(f"下載失敗: {e}")
+        # 回傳空表避免當機
         return pd.DataFrame(columns=['latitude', 'longitude', 'mag', 'depth', 'year', 'place'])
 
 # App 啟動時下載一次
@@ -39,7 +41,7 @@ def query_earthquakes(min_mag, selected_year):
     if df_earthquakes.empty:
         return df_earthquakes
 
-    # SQL 篩選
+    # SQL 篩選：直接查全域變數 df_earthquakes
     query = f"""
         SELECT latitude, longitude, mag, depth, place, year
         FROM df_earthquakes 
