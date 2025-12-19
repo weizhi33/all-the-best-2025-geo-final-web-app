@@ -1,170 +1,157 @@
 import solara
-import leafmap.foliumap as leafmap  # 使用 Folium 引擎 (靜態渲染)
+import leafmap.foliumap as leafmap
 import pandas as pd
 import duckdb
-import random
-import os
 
 # ==========================================
-# 1. 資料準備：生成模擬地震數據
+# 1. 資料準備：直接從 USGS 網址讀取 (不存檔)
 # ==========================================
-DB_FILE = "earthquakes_sim.csv" # 改個檔名避免衝突
+# 這是您指定的 USGS 真實資料源
+CSV_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.csv"
 
-def generate_fake_earthquakes():
-    if os.path.exists(DB_FILE):
-        return
-
-    print("正在生成地震資料庫...")
-    data = []
-    # 範圍：涵蓋整個中橫公路與周邊山區
-    lat_min, lat_max = 23.8, 24.5
-    lon_min, lon_max = 120.8, 121.9
-
-    for _ in range(3500): # 生成 3500 筆
-        lat = random.uniform(lat_min, lat_max)
-        lon = random.uniform(lon_min, lon_max)
-        magnitude = round(random.uniform(3.0, 7.5), 1)
-        depth = round(random.uniform(2, 80), 1)
-        year = random.randint(1990, 2024)
+def get_real_earthquake_data():
+    print(f"正在連線 USGS 下載真實地震資料: {CSV_URL} ...")
+    try:
+        # 直接從 URL 讀取 CSV 到記憶體，不存入硬碟，避免 Read-only 錯誤
+        df = pd.read_csv(CSV_URL)
         
-        # 模擬地理標籤
-        if lon > 121.6: place = "東部海域"
-        elif lon > 121.4: place = "太魯閣/立霧溪"
-        elif lon > 121.1: place = "中央山脈/合歡山"
-        else: place = "南投/埔里"
+        # --- 資料清理與整理 ---
+        # 1. USGS 的時間格式是字串，轉成 datetime 物件以便抓出年份
+        df['time'] = pd.to_datetime(df['time'])
+        df['year'] = df['time'].dt.year
+        
+        # 2. 處理空值 (有些地震可能沒有深度或規模)
+        df = df.dropna(subset=['latitude', 'longitude', 'mag', 'depth'])
+        
+        print(f"成功下載！共 {len(df)} 筆全球地震資料。")
+        return df
+        
+    except Exception as e:
+        print(f"下載失敗，請檢查網路連線。錯誤訊息: {e}")
+        # 萬一 USGS 網站掛了，回傳一個空的 DataFrame 避免程式崩潰
+        return pd.DataFrame(columns=['latitude', 'longitude', 'mag', 'depth', 'year', 'place'])
 
-        data.append({
-            "latitude": lat,
-            "longitude": lon,
-            "magnitude": magnitude,
-            "depth": depth,
-            "year": year,
-            "place": place
-        })
-    
-    df = pd.DataFrame(data)
-    df.to_csv(DB_FILE, index=False)
-    print("地震資料庫生成完畢！")
-
-# 初始化資料
-generate_fake_earthquakes()
+# 全域變數：App 啟動時下載一次
+df_earthquakes = get_real_earthquake_data()
 
 # ==========================================
-# 2. DuckDB 查詢引擎
+# 2. DuckDB 查詢 (針對真實欄位名稱調整)
 # ==========================================
 def query_earthquakes(min_mag, selected_year):
-    con = duckdb.connect()
-    # SQL 秒殺查詢
+    # USGS 的欄位名稱是 'mag' (規模) 和 'depth' (深度)
+    # 我們在這裡用 SQL 進行篩選
+    # 為了避免資料太多，我們也可以限制範圍在台灣附近 (緯度 21-26, 經度 119-123)
+    
     query = f"""
-        SELECT latitude, longitude, magnitude, depth, place
-        FROM '{DB_FILE}' 
-        WHERE magnitude >= {min_mag} 
+        SELECT latitude, longitude, mag, depth, place, year
+        FROM df_earthquakes 
+        WHERE mag >= {min_mag} 
         AND year = {selected_year}
+        -- 下面這行可以打開，如果只想看台灣附近的地震
+        -- AND latitude BETWEEN 20 AND 27 AND longitude BETWEEN 118 AND 124
     """
-    df_result = con.execute(query).df()
-    con.close()
-    return df_result
+    
+    # 如果資料是空的(下載失敗)，回傳空表
+    if df_earthquakes.empty:
+        return df_earthquakes
+        
+    return duckdb.query(query).to_df()
 
 # ==========================================
-# 3. 響應式變數
+# 3. 變數
 # ==========================================
 min_magnitude = solara.reactive(4.0) 
-current_year = solara.reactive(2024) 
+# 因為 USGS 這個網址只給「最近 30 天」的資料，所以年份通常只有今年(2025)或去年(2024)
+# 我們自動抓資料裡有的年份
+default_year = 2024
+if not df_earthquakes.empty:
+    default_year = int(df_earthquakes['year'].max())
+
+current_year = solara.reactive(default_year) 
 
 # ==========================================
-# 4. 頁面元件
+# 4. 頁面
 # ==========================================
 @solara.component
 def Page():
     
-    # 計算並生成 HTML 字串
     def calculate_map_html():
         df = query_earthquakes(min_magnitude.value, current_year.value)
         count = len(df)
         
-        # 建立地圖 (Folium)
         m = leafmap.Map(
-            center=[24.15, 121.4], # 以太魯閣為中心
-            zoom=9,
+            center=[24.15, 121.4],
+            zoom=6, # 拉遠一點看大範圍
             google_map="HYBRID",
             draw_control=False,
             measure_control=False,
         )
 
-        # 根據深度給顏色 (淺=紅, 深=藍)
         def get_color(depth):
             if depth < 15: return "red"
-            elif depth < 30: return "orange"
+            elif depth < 70: return "orange" # USGS 對淺層/深層的定義稍微不同
             else: return "blue"
 
         if not df.empty:
-            # 必須把 pandas series 轉成 list 才能跑迴圈 (Folium 要求)
-            lats = df['latitude'].tolist()
-            lons = df['longitude'].tolist()
-            mags = df['magnitude'].tolist()
-            depths = df['depth'].tolist()
-            places = df['place'].tolist()
-
-            for lat, lon, mag, depth, place in zip(lats, lons, mags, depths, places):
-                m.add_circle_marker(
-                    location=[lat, lon],
-                    radius=mag * 1.5, # 規模越大圈圈越大
-                    color=get_color(depth),
+            for _, row in df.iterrows():
+                leafmap.folium.CircleMarker(
+                    location=[row['latitude'], row['longitude']],
+                    radius=row['mag'] * 1.5,
+                    color=get_color(row['depth']),
                     fill=True,
-                    fill_color=get_color(depth),
+                    fill_color=get_color(row['depth']),
                     fill_opacity=0.6,
-                    popup=f"<b>{place}</b><br>規模: {mag}<br>深度: {depth}km"
-                )
-        
+                    popup=f"<b>{row['place']}</b><br>規模(Mag): {row['mag']}<br>深度: {row['depth']}km<br>時間: {row['year']}"
+                ).add_to(m)
+
         return m.to_html(), count
 
-    # 效能優化
     map_html, count = solara.use_memo(
         calculate_map_html,
         dependencies=[min_magnitude.value, current_year.value]
     )
+    
+    # 取得資料庫裡有的年份範圍，用來設定滑桿
+    years = [2024, 2025]
+    if not df_earthquakes.empty:
+        years = sorted(df_earthquakes['year'].unique().tolist())
+    min_year = min(years) if years else 2024
+    max_year = max(years) if years else 2025
 
-    solara.Title("大地的心跳：地震時光機")
+    solara.Title("大地的心跳：USGS 真實數據")
 
     with solara.Columns([1, 3]):
         
         # --- 左側：控制面板 ---
-        with solara.Column(style={"padding": "20px", "background-color": "#2b2b2b", "color": "#e0e0e0", "height": "100%"}): # 深色主題
-            solara.Markdown("## 💓 大地的心跳")
-            solara.Markdown("中橫公路穿越了劇烈的造山運動帶。")
-            solara.Markdown("透過 **DuckDB** 引擎，我們能瞬間回顧過去 30 年的地殼脈動。")
+        with solara.Column(style={"padding": "20px", "background-color": "#2b2b2b", "color": "#e0e0e0", "height": "100%"}):
+            solara.Markdown("## 💓 大地的心跳 (Real-Time)")
+            solara.Markdown("直接串接 **USGS (美國地質調查局)** 即時資料流。")
             
             solara.Markdown("---")
             
             with solara.Card(margin=0, elevation=1, style={"background-color": "#424242", "color": "white"}):
-                solara.Markdown("### 📊 數據儀表板")
-                solara.Markdown(f"年份：**{current_year.value}**")
-                solara.Markdown(f"偵測地震數：**{count}** 筆")
+                solara.Markdown("### 📡 數據來源狀態")
+                solara.Markdown(f"來源：**USGS Feed (2.5+ Month)**")
+                solara.Markdown(f"資料年份：**{min_year} - {max_year}**")
+                solara.Markdown(f"篩選後筆數：**{count}** 筆")
                 
             solara.Markdown("---")
-            solara.Markdown("### 🎛️ 參數控制")
             
-            solara.SliderInt(
-                label="年份選擇",
-                value=current_year,
-                min=1990, max=2024,
-                thumb_label="always"
-            )
-            
-            solara.SliderFloat(
-                label="最小規模 (Magnitude)",
-                value=min_magnitude,
-                min=3.0, max=7.0, step=0.1,
-                thumb_label="always"
-            )
+            # 如果資料只有一年，滑桿會有點怪，但還是可以用
+            solara.SliderInt(label="年份", value=current_year, min=min_year, max=max_year, thumb_label="always")
+            solara.SliderFloat(label="最小規模", value=min_magnitude, min=2.5, max=7.5, step=0.1, thumb_label="always")
             
             solara.Markdown("---")
-            solara.Markdown("### 🔴 圖例說明")
-            solara.Markdown("* **紅色**：極淺層地震 (<15km) - 破壞力最強")
-            solara.Markdown("* **橘色**：淺層地震 (15-30km)")
-            solara.Markdown("* **藍色**：深層地震 (>30km)")
+            with solara.Details(summary="ℹ️ 資料說明"):
+                 solara.Markdown("""
+                 **真實資料來源**：
+                 `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.csv`
+                 
+                 此頁面展示最近 30 天內，全球規模 2.5 以上的真實地震紀錄。
+                 資料由 Python 直接載入記憶體進行 DuckDB 運算，確保資料即時性。
+                 """)
 
-        # --- 右側：地圖 (Iframe 渲染) ---
+        # --- 右側：地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
                 solara.Div(
@@ -180,7 +167,7 @@ def Page():
                         )
                     ],
                     style={"width": "100%", "height": "700px"},
-                    key=f"seismic-map-{current_year.value}-{min_magnitude.value}"
+                    key=f"seismic-real-v1-{current_year.value}-{min_magnitude.value}"
                 )
 
 Page()
