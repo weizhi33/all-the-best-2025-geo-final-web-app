@@ -2,19 +2,19 @@ import solara
 import leafmap.maplibregl as leafmap
 
 def create_canyon_map():
-    # 視角中心：稍微往東移一點，讓壩體和湖都能看到
-    YANZIKOU_CENTER = [121.557, 24.173]
+    # 1. 視角中心：稍微往西北移，同時看到「紀念公園 (右)」與「災害區 (左)」
+    CENTER = [121.555, 24.174]
     
     m = leafmap.Map(
-        center=YANZIKOU_CENTER,
-        zoom=16,
-        pitch=75,
-        bearing=-85, # 視角稍微轉一下，看這兩個物體的相對關係
+        center=CENTER,
+        zoom=15.8,   # 調整縮放，讓公園和堰塞湖都在畫面內
+        pitch=75,    # 3D 傾斜，感受峽谷壓迫感
+        bearing=-90, # 視角朝西 (從下游往上游看)
         style="liberty",
         height="700px"
     )
 
-    # 1. 混合衛星圖
+    # 2. Google 混合衛星圖
     m.add_source("google-hybrid", {
         "type": "raster",
         "tiles": ["https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"],
@@ -27,74 +27,77 @@ def create_canyon_map():
         "paint": {"raster-opacity": 1.0}
     })
 
-    # 2. 地形 (2.0倍誇張)
+    # 3. 3D 地形 (2.0倍誇張)
     m.add_source("aws-terrain", {
         "type": "raster-dem",
         "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        "tileSize": 256
+        "tileSize": 256,
+        "encoding": "terrarium"
     })
     m.set_terrain({"source": "aws-terrain", "exaggeration": 2.0})
 
-    # 3. 堰塞湖 (藍色水域) - 位於上游
+    # 4. 堰塞湖 (藍色)
     LAKE_POLYGON = [
         [
-            [121.558641, 24.173954], # 下游 (壩體後方)
+            [121.558641, 24.173954],
             [121.556225, 24.175016],
             [121.550570, 24.174189],
             [121.549654, 24.173071],
             [121.553420, 24.170589],
             [121.558215, 24.173396],
-            [121.558641, 24.173954]  # 閉合
+            [121.558641, 24.173954]
         ]
     ]
     m.add_geojson({
         "type": "Feature",
         "geometry": {"type": "Polygon", "coordinates": LAKE_POLYGON},
-        "properties": {"name": "堰塞湖"}
+        "properties": {"name": "堰塞湖 (淹沒區)"}
     }, layer_type="fill", paint={
-        "fill-color": "#0099ff",  # 水藍色
+        "fill-color": "#0099ff", 
         "fill-opacity": 0.6,
         "fill-outline-color": "#ffffff"
     })
 
-    # 4. [新增] 天然壩 (黃色崩塌地) - 位於下游擋水處
-    # 座標已經幫您轉好了 [Lon, Lat]
+    # 5. 天然壩 (黃色)
     DAM_POLYGON = [
         [
-            [121.558502, 24.173547], # 點 1
-            [121.558858, 24.173786], # 點 2
-            [121.559375, 24.173142], # 點 3
-            [121.559111, 24.172841], # 點 4
-            [121.558502, 24.173547]  # 閉合
+            [121.558502, 24.173547], 
+            [121.558858, 24.173786], 
+            [121.559375, 24.173142], 
+            [121.559111, 24.172841], 
+            [121.558502, 24.173547]
         ]
     ]
     m.add_geojson({
         "type": "Feature",
         "geometry": {"type": "Polygon", "coordinates": DAM_POLYGON},
-        "properties": {"name": "天然壩/崩塌地"}
+        "properties": {"name": "天然壩 (崩塌熱點)"}
     }, layer_type="fill", paint={
-        "fill-color": "#ffcc00",  # 警示黃/土石顏色
-        "fill-opacity": 0.7,      # 稍微不透明一點，更有實體感
-        "fill-outline-color": "#ff0000" # 紅色邊框加強警示
+        "fill-color": "#ffcc00", 
+        "fill-opacity": 0.8,
+        "fill-outline-color": "#ff0000"
     })
 
-    # 5. 標記
-    # 靳珩段長紀念標記
+    # 6. ★★★ 靳珩段長紀念標記 (保留重點) ★★★
     popup_jinheng = """
-        <div style="width: 200px;">
-            <h3 style="margin:0;">🕯️ 靳珩段長殉職處</h3>
-            <p style="font-size:13px; margin:5px 0;">民國46年，中橫建設期間發生大地震。段長在此處巡視時，不幸被落石擊中殉職。後人將此橋改名為「靳珩橋」以資紀念。</p>
+        <div style="font-family: sans-serif; width: 220px;">
+            <h3 style="margin:0; color:#333; border-bottom:2px solid red; padding-bottom:5px;">🕯️ 靳珩公園</h3>
+            <p style="font-size:13px; color:#555; margin-top:8px;">
+                <b>「路是人開出來的，也是命換來的。」</b><br><br>
+                民國46年，中橫建設期間發生大地震。靳珩段長於此處視察時，不幸被落石擊中殉職。
+                後人將此橋命名為「靳珩橋」，並設立公園以茲紀念。
+            </p>
         </div>
     """
     m.add_marker(
         lng_lat=[121.561, 24.174], 
-        popup={"html": popup_jinheng}
+        popup={"html": popup_jinheng} # 使用 HTML 豐富內容
     )
     
-    # 天然壩標記
+    # 7. 災害解說點
     m.add_marker(
         lng_lat=[121.559, 24.1732],
-        popup={"content": "<b>天然壩 (崩塌熱點)</b><br>造成河道阻塞的主因"}
+        popup={"content": "<b>⚠️ 天然壩阻塞點</b><br>燕子口峽谷最窄處，易形成土石壩"}
     )
 
     m.add_layer_control()
@@ -107,41 +110,39 @@ def Page():
     solara.Title("峽谷災害模擬")
 
     with solara.Columns([1, 3]):
-        # --- 左側：詳細解說 ---
+        
+        # --- 左側：解說面板 ---
         with solara.Column(style={"padding": "20px", "background-color": "#fff5f5", "height": "100%"}):
-            solara.Markdown("## ⚠️ 致命的連鎖反應")
-            solara.Markdown("這裡展示了太魯閣峽谷最典型的災害模式：**崩塌 -> 堵塞 -> 堰塞湖**。")
+            solara.Markdown("## ⚠️ 峽谷之險與歷史記憶")
+            solara.Markdown("燕子口不僅是壯麗的峽谷，也是地質最脆弱、歷史最沉重的路段。")
             
             solara.Markdown("---")
             
-            with solara.Card("🟡 成因：天然壩 (Landslide Dam)", margin=0, elevation=1):
+            # 歷史故事卡片
+            with solara.Card("🕯️ 歷史記憶：靳珩段長", margin=0, elevation=2):
                 solara.Markdown("""
-                地圖上的 **黃色區域** 代表崩塌落石堆積處。
+                地圖右側的 **靳珩公園** (請點擊地圖上的標記)，見證了這條路的血淚史。
                 
-                燕子口岩壁陡峭，一旦發生地震（如 1957 年、2024 年），大量巨石崩落，瞬間形成一道「天然土石壩」，切斷立霧溪水流。
+                1957 年的地震誘發了大規模落石，奪走了靳珩段長的性命。
+                **這個位置絕非偶然**——它正是峽谷最窄、地質應力最集中的地方，也是地圖上顯示最容易發生崩塌（黃色區塊）的地點。
                 """)
-
+            
             solara.Markdown("<br>")
 
-            with solara.Card("🔵 結果：堰塞湖 (Barrier Lake)", margin=0, elevation=1):
+            with solara.Card("🌊 地理災害機制", margin=0, elevation=1):
                 solara.Markdown("""
-                地圖上的 **藍色區域** 代表回水淹沒區。
+                * **黃色區 (天然壩)**：崩塌土石堆積熱點。
+                * **藍色區 (堰塞湖)**：若天然壩形成，溪水回堵的淹沒範圍。
                 
-                水流被擋住後，水位迅速抬升，淹沒上游河谷。這對公路地基是極大的威脅。
+                透過 3D 視角，您可以清楚看見公路是如何「掛」在這些危險的岩壁之上。
                 """)
             
             solara.Markdown("---")
-            
-            with solara.Details(summary="🕯️ 歷史記憶：靳珩段長"):
-                solara.Markdown("""
-                **只要有路，就有他們的故事。**
-                
-                就在這張地圖的右側（靳珩公園），是紀念 **段靳珩** 段長的地方。
-                
-                民國 46 年 10 月，中橫開拓期間發生強震。段長在視察災情時，正是在這險峻的燕子口路段，不幸被落石擊中殉職。這座「靳珩橋」與旁邊的隧道，就是為了感念他與工程人員的犧牲。
-                """)
+            solara.Info("💡 互動提示：右鍵拖曳可旋轉 3D 視角，感受燕子口「一線天」的垂直壓迫感。")
 
-        # --- 右側：地圖 ---
+        # --- 右側：地圖 (MapLibre 3D) ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
             with solara.Card(elevation=2, margin=0, style={"height": "100%", "padding": "0"}):
                 map_object.to_solara()
+
+Page()
