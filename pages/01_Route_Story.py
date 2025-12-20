@@ -1,149 +1,163 @@
 import solara
-import leafmap.maplibregl as leafmap
+import leafmap.foliumap as leafmap
 
-# --- 1. 定義故事資料 ---
-STORY_STEPS = [
+# ==========================================
+# 1. 定義沿途亮點 (修正：只保留與專題相關的節點)
+# ==========================================
+ROUTE_HIGHLIGHTS = [
     {
-        "title": "1. 起點：台灣地理中心",
-        "text": "旅程從南投埔里開始。這裡是台灣的地理幾何中心，海拔約 450m。我們將從這裡沿著台 14 線往東，開始挑戰中央山脈。",
-        "location": [120.981, 23.976], 
+        "id": 0,
+        "title": "📍 起點：埔里地理中心",
+        "location": [23.9700, 120.9700], 
         "zoom": 13,
-        "pitch": 45,
-        "marker_text": "埔里盆地"
+        "content": """
+        **旅程的起點**
+        
+        我們從台灣地理中心——埔里出發。
+        由此沿著台14甲線一路爬升，告別盆地，
+        準備進入高山與峽谷的地理實察之旅。
+        """,
+        "icon": "home",
+        "color": "blue"
     },
     {
-        "title": "2. 碧湖水色：霧社水庫",
-        "text": "進入山區後，首先映入眼簾的是「碧湖」。這是日治時期興建的水庫，負責調節濁水溪上游的水量。雖然美麗，但近年來面臨嚴重的淤積問題。",
-        "location": [121.145, 24.015],
-        "zoom": 13.5,
-        "pitch": 60,
-        "marker_text": "霧社水庫"
-    },
-    {
-        "title": "3. 歷史秘境：消失的滑雪場",
-        "text": "你相信台灣曾經能滑雪嗎？在合歡山東峰與合歡尖山之間的這片谷地，60 年代曾設有滑雪纜車。這裡獨特的「圈谷地形」能留住積雪，是台灣罕見的冰河遺跡。",
-        "location": [121.282, 24.139],
+        "id": 1,
+        "title": "⛰️ 最高點：武嶺 (海拔3275m)",
+        "location": [24.1370, 121.2760], 
         "zoom": 15,
-        "pitch": 70, 
-        "marker_text": "舊滑雪場遺址"
+        "content": """
+        **亞熱帶的雪國遺跡**
+        
+        抵達公路最高點，這裡是視野最遼闊的地方。
+        **(稍後的 Page 05，我們將在此尋找 1960 年代消失的「合歡山滑雪場」與纜車遺址)**。
+        """,
+        "icon": "star",
+        "color": "orange" 
     },
     {
-        "title": "4. 公路巔峰：武嶺",
-        "text": "海拔 3275 公尺，全台灣公路的最高點！站上觀景台，腳下是台 14 甲線最著名的蜿蜒路段。這裡是無數騎士與遊客挑戰自我的終極目標。",
-        "location": [121.276, 24.137],
+        "id": 2,
+        "title": "⚠️ 險境：太魯閣峽谷",
+        "location": [24.1735, 121.5650], # 燕子口一帶
         "zoom": 15,
-        "pitch": 50,
-        "marker_text": "武嶺亭 (3275m)"
+        "content": """
+        **立霧溪的切割與災害**
+        
+        進入中橫東段，地形轉為垂直的大理石峭壁。
+        壯麗的背後，隱藏著落石與堰塞湖的危機。
+        **(稍後的 Page 06，我們將深入分析這裡脆弱的地質災害)**。
+        """,
+        "icon": "warning-sign", # 改成警示圖標
+        "color": "red" 
     },
     {
-        "title": "5. 峽谷驚奇：燕子口",
-        "text": "翻過中央山脈一路下切，我們來到了太魯閣峽谷最精華的「燕子口」。立霧溪在這裡切穿大理岩，形成深邃的「V型谷」。這裡也是落石風險最高的區域之一。",
-        "location": [121.565, 24.173],
-        "zoom": 16,
-        "pitch": 80,
-        "marker_text": "燕子口步道"
+        "id": 3,
+        "title": "🌊 終點：立霧溪出海口",
+        "location": [24.1565, 121.6225], # 牌樓/出海口
+        "zoom": 14,
+        "content": """
+        **山海交界處**
+        
+        穿過太魯閣牌樓，立霧溪在此注入太平洋。
+        **(最後在 Page 08，我們將利用衛星影像，觀察這片河口三角洲與海岸線的 25 年變遷)**。
+        """,
+        "icon": "flag",
+        "color": "purple"
     }
 ]
 
-# --- 2. Solara 狀態管理 ---
-current_step = solara.reactive(0)
+# ==========================================
+# 2. 響應式變數
+# ==========================================
+current_step = solara.reactive(0) 
 
-# --- 3. 地圖創建函數 (更新版：純淨衛星地圖) ---
-def create_story_map(step_index):
-    step_data = STORY_STEPS[step_index]
-    
-    # 建立地圖
-    m = leafmap.Map(
-        center=step_data["location"],
-        zoom=step_data["zoom"],
-        pitch=step_data["pitch"],
-        bearing=0,
-        style="liberty", 
-        height="600px"
-    )
-    
-    # 1. [修正] 改用 Google Satellite (純衛星，無標籤)
-    # 關鍵參數：lyrs=s (原本是 y)
-    m.add_source("google-satellite", {
-        "type": "raster",
-        "tiles": ["https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"],
-        "tileSize": 256
-    })
-    
-    # 2. 加入圖層
-    m.add_layer({
-        "id": "google-satellite-layer",
-        "type": "raster",
-        "source": "google-satellite",
-        "paint": {"raster-opacity": 1.0}
-    })
-    
-    # 3. 加入地形
-    m.add_source("aws-terrain", {
-        "type": "raster-dem",
-        "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        "tileSize": 256,
-        "encoding": "terrarium"
-    })
-    m.set_terrain({"source": "aws-terrain", "exaggeration": 1.5})
-    
-    # 4. 加入標記 (維持我們設計好的樣式)
-    popup_html = f"""
-        <div style="font-weight: bold; font-size: 15px; color: #333; font-family: sans-serif;">
-            📍 {step_data['marker_text']}
-        </div>
-    """
-    m.add_marker(
-        lng_lat=step_data["location"],
-        popup={"html": popup_html}
-    )
-    
-    m.add_layer_control()
-    return m
-
-# --- 4. 頁面組件 ---
+# ==========================================
+# 3. 頁面元件
+# ==========================================
 @solara.component
 def Page():
-    step_data = STORY_STEPS[current_step.value]
     
-    map_object = solara.use_memo(
-        lambda: create_story_map(current_step.value),
-        dependencies=[current_step.value]
-    )
-
-    solara.Title("中橫故事地圖")
-
-    with solara.Column(style={"padding": "20px"}):
-        solara.Markdown("# 🛤️ 穿越中橫：從平地到雲端的旅程")
+    highlight = ROUTE_HIGHLIGHTS[current_step.value]
+    
+    def get_map():
+        m = leafmap.Map(
+            center=highlight["location"],
+            zoom=highlight["zoom"],
+            google_map="HYBRID",
+            draw_control=False,
+            measure_control=False,
+        )
         
-        with solara.Columns([2, 1]):
-            # 左側：地圖
-            with solara.Column():
-                with solara.Card(elevation=2, margin=0, style={"padding": "0"}):
-                    map_object.to_solara()
+        for item in ROUTE_HIGHLIGHTS:
+            is_active = (item["id"] == current_step.value)
+            m.add_marker(
+                location=item["location"],
+                popup=item["title"],
+                icon=leafmap.folium.Icon(
+                    color=item["color"] if is_active else "gray", 
+                    icon=item["icon"] if is_active else "circle",
+                )
+            )
+        return m
+
+    with solara.Column(style={"height": "100vh", "padding": "0"}):
+        
+        solara.Title("中橫公路：專題路線導覽")
+        
+        # --- 導言區 ---
+        with solara.Row(style={"padding": "20px 20px 10px 20px", "background-color": "#f8f9fa", "flex-direction": "column", "align-items": "flex-start"}):
+             solara.HTML(tag="h2", unsafe_innerHTML="🛣️ 01. 旅程導覽：西進東出", style="margin: 0 0 10px 0;")
+             solara.Success("💡 本頁面依序串聯本次 GIS 報告的四大場域：從埔里出發，經武嶺（滑雪場）、太魯閣峽谷（災害），終至立霧溪口（海岸變遷）。", icon="mdi-map-marker-path")
+
+        # --- 左右分割 ---
+        with solara.Columns([1, 2], style={"height": "calc(100vh - 150px)"}):
             
-            # 右側：故事控制
-            with solara.Column(style={"padding-left": "20px"}):
-                solara.Text(f"場景 {current_step.value + 1} / {len(STORY_STEPS)}", style={"font-weight": "bold", "color": "#666"})
+            # 左側：導覽
+            with solara.Column(style={"padding": "30px", "background-color": "white", "height": "100%", "overflow-y": "auto"}):
                 
-                solara.Markdown(f"## {step_data['title']}")
+                with solara.Row(justify="space-between", style={"margin-bottom": "20px"}):
+                    solara.Button("上一站", on_click=lambda: current_step.set(max(0, current_step.value - 1)), disabled=(current_step.value == 0))
+                    solara.Text(f"第 {current_step.value + 1} 站 / 共 {len(ROUTE_HIGHLIGHTS)} 站")
+                    solara.Button("下一站", on_click=lambda: current_step.set(min(len(ROUTE_HIGHLIGHTS) - 1, current_step.value + 1)), disabled=(current_step.value == len(ROUTE_HIGHLIGHTS) - 1))
+
                 solara.Markdown("---")
-                solara.Markdown(f"{step_data['text']}")
                 
+                with solara.Column(key=f"hl-final-content-{highlight['id']}"):
+                    solara.HTML(tag="h3", unsafe_innerHTML=highlight["title"], style=f"color: {highlight['color']};")
+                    solara.Markdown(highlight["content"])
+
                 solara.Markdown("---")
-                
-                with solara.Row(justify="center", gap="10px", style={"margin-top": "20px"}):
-                    solara.Button(
-                        "⬅️ 上一站", 
-                        on_click=lambda: current_step.set(max(0, current_step.value - 1)),
-                        disabled=(current_step.value == 0),
-                        outlined=True
-                    )
-                    solara.Button(
-                        "下一站 ➡️", 
-                        on_click=lambda: current_step.set(min(len(STORY_STEPS) - 1, current_step.value + 1)),
-                        disabled=(current_step.value == len(STORY_STEPS) - 1),
-                        color="primary"
-                    )
+                solara.Markdown("#### 📍 路線節點")
+                with solara.Column(gap="10px"):
+                    for item in ROUTE_HIGHLIGHTS:
+                        style = "font-weight: bold; color: black;" if item["id"] == current_step.value else "color: gray; cursor: pointer;"
+                        prefix = "👉 " if item["id"] == current_step.value else "　 "
+                        
+                        def make_handler(idx):
+                            return lambda: current_step.set(idx)
+                            
+                        solara.Button(
+                            label=prefix + item["title"], 
+                            text=True, 
+                            on_click=make_handler(item["id"]),
+                            style=style
+                        )
+
+            # 右側：地圖
+            with solara.Column(style={"height": "100%", "padding": "0"}):
+                solara.Div(
+                    children=[
+                         solara.HTML(
+                            tag="iframe",
+                            attributes={
+                                "srcdoc": get_map().to_html(),
+                                "width": "100%",
+                                "height": "100%",
+                                "style": "border: none; width: 100%; height: 750px;" 
+                            }
+                        )
+                    ],
+                    style={"height": "100%", "width": "100%"},
+                    key=f"highlight-final-map-{current_step.value}" 
+                )
 
 Page()
