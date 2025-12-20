@@ -16,15 +16,13 @@ def Page():
             measure_control=False,
         )
         
-        # 2. 定義圖磚網址 (直接用 URL 最穩，不再依賴關鍵字)
-        # Google Satellite (衛星) - 用於看淤積水色
+        # 2. 定義圖磚網址 (Direct URL)
+        # Google Satellite (衛星)
         url_sat = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-        
-        # Google Terrain (地形) - 用於看等高線與暈渲
+        # Google Terrain (地形)
         url_ter = "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
         
-        # 3. 建立捲簾 (Split Map)
-        # 這裡直接傳入網址字串
+        # 3. 建立捲簾
         m.split_map(
             left_layer=url_sat, 
             right_layer=url_ter,
@@ -32,12 +30,10 @@ def Page():
             right_label="地形：河谷等高線"
         )
         
-        # 加入圖例 (選擇性)
         m.add_legend(title="捲簾對照：衛星 vs 地形", position="bottomright")
-
         return m
 
-    # 4. 記憶體輸出 HTML (最穩定的寫法)
+    # 4. 記憶體輸出
     m = get_wushe_map()
     fp = io.BytesIO()
     m.save(fp, close_file=False)
@@ -59,24 +55,32 @@ def Page():
             # 左側：地理分析
             with solara.Column(style={"padding": "20px", "background-color": "white", "height": "100%", "overflow-y": "auto"}):
                 
-                solara.Markdown("### 碧湖之下隱藏的危機")
-                solara.Markdown("台14甲線起點旁的碧湖（霧社水庫），美景之下隱藏著嚴重的淤積危機。")
-                
-                solara.Markdown("---")
-                
-                with solara.Card("🔍 觀察重點", margin=0, elevation=1):
+                # ★★★ 新增：水庫小檔案 ★★★
+                with solara.Card("💧 關於霧社水庫 (Wanda Reservoir)", margin=0, elevation=2):
                     solara.Markdown("""
-                    **1. 水色差異 (左圖：衛星)**
-                    * 請拖曳捲簾，觀察靠近上游（地圖上方/萬大溪匯入處）的水色呈現**混濁的土黃色**。
-                    * 這顯示了上游集水區帶來的巨量泥沙，是水庫壽命的殺手。
+                    **別名**：碧湖 (Bihu)
+                    **完工年份**：1957 年
+                    **功能**：攔截濁水溪上游水源，調節水量傳送至日月潭發電。
                     
-                    **2. 縱谷地形 (右圖：地形)**
-                    * 切換到右側地形圖，觀察密集的**等高線**。
-                    * 霧社水庫位於狹窄的 V 型谷中，兩岸坡度極陡，這雖然利於蓄水，但也代表集水區地質脆弱，容易發生崩塌與淤積。
+                    因群山環繞、水色青碧，蔣介石曾以此命名為「碧湖」。它是台灣高山水庫的先驅，卻也因地質年輕，長年飽受淤積之苦。
                     """)
                 
                 solara.Markdown("---")
-                solara.Info("💡 地圖圖層說明：右側使用了 Google Terrain 地形圖層，帶有立體暈渲 (Hillshade) 效果，能清楚呈現山谷的立體感。")
+                
+                # 原有的觀察重點
+                with solara.Card("🔍 衛星觀察重點", margin=0, elevation=1):
+                    solara.Markdown("""
+                    **1. 混濁的水色 (左圖)**
+                    * 請注意地圖上方（萬大溪匯入處），水面呈現**土黃色**。
+                    * 這不是污染，而是上游崩塌帶來的巨量懸浮泥沙，顯示水庫正面臨「土腸寸斷」的淤積危機。
+                    
+                    **2. 險峻的 V 型谷 (右圖)**
+                    * 切換到右側地形圖，可見兩岸等高線極度密集。
+                    * 這種高山峽谷地形雖然能蓄水，但也代表集水區坡度極陡，只要大雨一來，土石便直衝水庫。
+                    """)
+                
+                solara.Markdown("---")
+                solara.Info("💡 下一頁 (Page 04)，我們將追蹤這些水是如何穿過山脈，透過「武界引水隧道」送往日月潭的。")
 
             # 右側：地圖
             with solara.Column(style={"height": "100%", "padding": "0"}):
@@ -93,7 +97,7 @@ def Page():
                         )
                     ],
                     style={"height": "100%", "width": "100%"},
-                    key="wushe-split-map-v2"
+                    key="wushe-split-map-final"
                 )
 
 Page()
