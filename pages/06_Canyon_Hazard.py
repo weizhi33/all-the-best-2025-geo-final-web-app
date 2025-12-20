@@ -142,7 +142,7 @@ def Page():
                 """)
             
             solara.Markdown("---")
-            solara.Info("💡 互動提示：請點擊地圖上的標記查看詳細資訊。按住滑鼠右鍵可旋轉 3D 視角。")
+            solara.Info("💡 互動提示：請點擊地圖上的標記查看資訊。按住滑鼠右鍵可旋轉 3D 視角。")
 
         # --- 右側：地圖 ---
         with solara.Column(style={"height": "750px", "padding": "0"}):
