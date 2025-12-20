@@ -1,6 +1,6 @@
 import solara
 import leafmap.foliumap as leafmap
-import io  # <--- 關鍵解藥：記憶體操作工具
+import io  # 記憶體操作工具
 
 # ==========================================
 # 1. 定義沿途亮點 (埔里 -> 太魯閣)
@@ -99,8 +99,7 @@ def Page():
             )
         )
 
-    # ★★★ 關鍵修復：使用 io.BytesIO 取代 .to_html() ★★★
-    # 這樣就不會去寫硬碟，避開 Permission Error
+    # 使用 io.BytesIO 寫入記憶體，避開 Permission Error
     fp = io.BytesIO()
     m.save(fp, close_file=False)
     fp.seek(0)
@@ -128,7 +127,8 @@ def Page():
 
                 solara.Markdown("---")
                 
-                with solara.Column(key=f"hl-final-content-{highlight['id']}"):
+                # ★★★ 關鍵修正：將 solara.Column 改為 solara.Div，解決 key 報錯問題 ★★★
+                with solara.Div(key=f"hl-final-content-{highlight['id']}"):
                     solara.HTML(tag="h3", unsafe_innerHTML=highlight["title"], style=f"color: {highlight['color']};")
                     solara.Markdown(highlight["content"])
 
