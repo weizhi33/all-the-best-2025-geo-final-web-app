@@ -3,7 +3,7 @@ import leafmap.foliumap as leafmap
 import io  # 記憶體操作工具
 
 # ==========================================
-# 1. 定義沿途亮點 (埔里 -> 太魯閣)
+# 1. 定義沿途亮點 (埔里 -> 水庫 -> 武嶺 -> 峽谷 -> 海口)
 # ==========================================
 ROUTE_HIGHLIGHTS = [
     {
@@ -23,6 +23,21 @@ ROUTE_HIGHLIGHTS = [
     },
     {
         "id": 1,
+        "title": "💧 水利樞紐：霧社水庫 (碧湖)",
+        "location": [24.0237, 121.1275], # 霧社壩/萬大水庫
+        "zoom": 14,
+        "content": """
+        **濁水溪的源頭與調度**
+        
+        來到霧社，映入眼簾的是群山環抱的「碧湖」。
+        這座水庫攔截了濁水溪上游的水源。
+        **(稍後的 Page 04，我們將深入探討其下游神秘的「武界壩」與引水隧道工程)**。
+        """,
+        "icon": "tint", # 水滴圖示
+        "color": "cadetblue" 
+    },
+    {
+        "id": 2,
         "title": "⛰️ 最高點：武嶺 (海拔3275m)",
         "location": [24.1370, 121.2760], 
         "zoom": 15,
@@ -36,9 +51,9 @@ ROUTE_HIGHLIGHTS = [
         "color": "orange" 
     },
     {
-        "id": 2,
+        "id": 3,
         "title": "⚠️ 險境：太魯閣峽谷",
-        "location": [24.1735, 121.5650], # 燕子口一帶
+        "location": [24.1735, 121.5650], # 燕子口
         "zoom": 15,
         "content": """
         **立霧溪的切割與災害**
@@ -51,9 +66,9 @@ ROUTE_HIGHLIGHTS = [
         "color": "red" 
     },
     {
-        "id": 3,
+        "id": 4,
         "title": "🌊 終點：立霧溪出海口",
-        "location": [24.1565, 121.6225], # 牌樓/出海口
+        "location": [24.1565, 121.6225], # 牌樓
         "zoom": 14,
         "content": """
         **山海交界處**
@@ -99,7 +114,7 @@ def Page():
             )
         )
 
-    # 使用 io.BytesIO 寫入記憶體，避開 Permission Error
+    # 記憶體寫入，避開 Permission Error
     fp = io.BytesIO()
     m.save(fp, close_file=False)
     fp.seek(0)
@@ -112,7 +127,7 @@ def Page():
         # --- 導言區 ---
         with solara.Row(style={"padding": "20px 20px 10px 20px", "background-color": "#f8f9fa", "flex-direction": "column", "align-items": "flex-start"}):
              solara.HTML(tag="h2", unsafe_innerHTML="🛣️ 01. 旅程導覽：西進東出", style="margin: 0 0 10px 0;")
-             solara.Success("💡 本頁面依序串聯本次 GIS 報告的四大場域：從埔里出發，經武嶺（滑雪場）、太魯閣峽谷（災害），終至立霧溪口（海岸變遷）。", icon="mdi-map-marker-path")
+             solara.Success("💡 本頁面依序串聯本次 GIS 報告的五大場域：從埔里出發，途經霧社（水庫）、武嶺（滑雪場）、太魯閣（災害），終至出海口（海岸變遷）。", icon="mdi-map-marker-path")
 
         # --- 左右分割 ---
         with solara.Columns([1, 2], style={"height": "calc(100vh - 150px)"}):
@@ -127,7 +142,7 @@ def Page():
 
                 solara.Markdown("---")
                 
-                # ★★★ 關鍵修正：將 solara.Column 改為 solara.Div，解決 key 報錯問題 ★★★
+                # 使用 solara.Div 避免 key 報錯
                 with solara.Div(key=f"hl-final-content-{highlight['id']}"):
                     solara.HTML(tag="h3", unsafe_innerHTML=highlight["title"], style=f"color: {highlight['color']};")
                     solara.Markdown(highlight["content"])
@@ -156,7 +171,7 @@ def Page():
                          solara.HTML(
                             tag="iframe",
                             attributes={
-                                "srcdoc": map_html_str, # 使用記憶體生成的 HTML 字串
+                                "srcdoc": map_html_str,
                                 "width": "100%",
                                 "height": "100%",
                                 "style": "border: none; width: 100%; height: 750px;" 
