@@ -2,56 +2,108 @@ import solara
 
 @solara.component
 def Page():
-    
-    # --- 1. 頁面標題區 ---
-    with solara.Column(style={"padding": "20px"}):
-        solara.Title("橫貫台灣：從平地到雲端") 
-        
-        solara.Markdown(r"""
-        # 🏔️ 橫貫台灣：中橫與台14甲的地理探索
-        
-        歡迎來到我們的 GIS 期末報告！這是一個基於 **Solara** 建構的地理資訊系統。
-        我們將帶領你穿越台灣最壯麗的公路——**中部橫貫公路 (台8線)** 與 **合歡山公路 (台14甲)**。
-        """)
+    # 設定 CSS 樣式 (讓卡片有陰影、標題有漸層)
+    solara.Style("""
+        .hero-title {
+            background: -webkit-linear-gradient(45deg, #094885, #1d976c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .tech-tag {
+            background-color: #e0f2f1;
+            color: #00695c;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .highlight-card {
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        .highlight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+    """)
 
-    # --- 2. 關鍵地點展示 ---
-    # 使用 Markdown 圖片語法，這是最穩定的顯示方式
-    with solara.Column(style={"padding": "20px", "background-color": "#f8f9fa", "border-radius": "10px"}):
-        solara.Markdown("### 📍 路線亮點")
+    with solara.Column(style={"padding": "40px", "max-width": "1200px", "margin": "0 auto"}):
         
-        with solara.Row(gap="20px", style={"flex-wrap": "wrap"}):
-            # 卡片 1
-            with solara.Card("起點：台灣地理中心碑", margin=2):
-                solara.Markdown("**海拔 450m**")
-                solara.Markdown("位於南投埔里，是台灣地理幾何中心。")
-                solara.Markdown("![地理中心碑](https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Geographic_Center_of_Taiwan_Monument_20090620.jpg/640px-Geographic_Center_of_Taiwan_Monument_20090620.jpg)")
+        # --- 1. Hero Section (主視覺區) ---
+        with solara.Column(align="center", style={"margin-bottom": "50px"}):
+            solara.Markdown("# 🇹🇼 中橫數位地誌", classes=["hero-title"])
+            solara.Markdown("### Cross-Island Chronicle: From Sea to Summit")
+            solara.Markdown("從海平面 0m 到海拔 3275m 的地理空間探索之旅")
             
-            # 卡片 2
-            with solara.Card("最高點：武嶺", margin=2):
-                solara.Markdown("**海拔 3275m**")
-                solara.Markdown("台灣公路最高點，也是單車騎士的聖地。")
-                solara.Markdown("![武嶺](https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Wuling_and_Hehuanshan_East_Peak_20110522.jpg/640px-Wuling_and_Hehuanshan_East_Peak_20110522.jpg)")
-                
-            # 卡片 3
-            with solara.Card("終點：太魯閣", margin=2):
-                solara.Markdown("**海拔 60m**")
-                solara.Markdown("世界級峽谷景觀，立霧溪切穿大理岩。")
-                solara.Markdown("![太魯閣](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Taroko_Gorge_and_Liwu_River_20080313.jpg/640px-Taroko_Gorge_and_Liwu_River_20080313.jpg)")
+            # 技術堆疊標籤
+            with solara.Row(style={"margin-top": "20px"}):
+                for tech in ["Python", "Solara", "Leafmap", "DuckDB", "USGS API", "Sentinel-2"]:
+                    solara.HTML(tag="span", classes=["tech-tag"], unsafe_innerHTML=tech)
 
-    # --- 3. 專案目標 ---
-    with solara.Column(style={"padding": "20px"}):
-        solara.Markdown("""
-        ### 🎯 我們要做什麼？
-        1. **視覺化**：透過 3D 地形圖，展現高低落差的震撼。
-        2. **環境變遷**：觀察霧社水庫與太魯閣峽谷的環境特徵。
-        3. **風險分析**：分析道路沿線的潛在災害風險。
-        """)
+        solara.Markdown("---")
 
-    # --- 4. 頁尾 ---
-    with solara.Column(style={"padding": "20px", "border-top": "1px solid #ddd", "margin-top": "20px"}):
-        solara.Markdown("""
-        **組員名單**：地理系 114級
-        *本專案使用 GitHub Codespaces 開發，部署於 Hugging Face Spaces。*
-        """)
+        # --- 2. 專案亮點 (四大金剛) ---
+        solara.Markdown("## 🗺️ 專案亮點導覽 (Project Highlights)")
+        
+        with solara.GridFixed(columns=2, row_gap="20px", column_gap="20px"):
+            
+            # Card 1: 歷史滑雪場 (人文/歷史)
+            with solara.Card(elevation=2, classes=["highlight-card"]):
+                with solara.Column():
+                    solara.Markdown("### 🏔️ 05. 亞熱帶的雪國傳說")
+                    solara.Markdown("**主題：歷史地理重建 (Historical GIS)**")
+                    solara.Markdown("利用古地圖與航照，結合 GPS 精確座標校正，在地圖上重現 1960 年代合歡山滑雪場的纜車與滑道遺址。")
+                    solara.Markdown("**技術重點：** GeoJSON 向量繪製、座標校正、多圖層控制")
+                    solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/05_Ski_Resort")
+
+            # Card 2: 海岸線變遷 (自然/變遷)
+            with solara.Card(elevation=2, classes=["highlight-card"]):
+                with solara.Column():
+                    solara.Markdown("### 🌊 08. 穿越百年的海岸線")
+                    solara.Markdown("**主題：環境變遷監測 (Change Detection)**")
+                    solara.Markdown("聚焦立霧溪出海口，透過 Sentinel-2 衛星影像與 USGS 歷史圖資，觀察 25 年來的海岸線退縮與陰陽海變化。")
+                    solara.Markdown("**技術重點：** 衛星影像串接、時序滑桿 (Time-Slider)")
+                    solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/08_Journey_End")
+
+            # Card 3: 地震大數據 (災害/數據)
+            with solara.Card(elevation=2, classes=["highlight-card"]):
+                with solara.Column():
+                    solara.Markdown("### 💓 09. 中橫震災大數據")
+                    solara.Markdown("**主題：災害地理資訊 (Hazard GIS)**")
+                    solara.Markdown("串接 USGS 真實資料流，利用 DuckDB 在瀏覽器端即時分析過去 25 年、數千筆地震紀錄的板塊構造。")
+                    solara.Markdown("**技術重點：** DuckDB In-Memory 運算、API 串接、大數據渲染")
+                    solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/09_Seismic_Activity")
+
+            # Card 4: 峽谷災害 (地景/地形)
+            with solara.Card(elevation=2, classes=["highlight-card"]):
+                with solara.Column():
+                    solara.Markdown("### ⚠️ 06. 峽谷之險與堰塞湖")
+                    solara.Markdown("**主題：地形災害分析 (Geomorphology)**")
+                    solara.Markdown("探討太魯閣峽谷脆弱的地質條件，並透過歷史案例分析土石流與堰塞湖的形成機制。")
+                    solara.Markdown("**技術重點：** 地形圖判釋、災害潛勢分析")
+                    solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/06_Canyon_Hazard")
+
+        solara.Markdown("---")
+
+        # --- 3. 研究方法與資料來源 ---
+        with solara.Details(summary="📚 資料來源與研究方法 (Methodology)"):
+            solara.Markdown("""
+            **本專案採用全端 GIS (Full-Stack GIS) 架構開發：**
+            
+            * **前端框架**：Solara (React-based Python framework) + Leafmap
+            * **資料庫引擎**：DuckDB (WASM/In-Memory OLAP)
+            * **地圖圖磚**：Google Hybrid, ESRI World Imagery, OpenStreetMap
+            * **數據來源**：
+                * *地震*：USGS Earthquake Hazards Program (API)
+                * *衛星*：Sentinel-2 (EOX Cloudless)
+                * *歷史圖資*：中研院台灣百年歷史地圖 (引用)
+            """)
+            
+        solara.Markdown("---")
+        solara.Info("💡 導覽提示：請點擊上方卡片按鈕，或使用左側選單 (Sidebar) 進行章節切換。", icon="mdi-hand-pointing-left")
 
 Page()
