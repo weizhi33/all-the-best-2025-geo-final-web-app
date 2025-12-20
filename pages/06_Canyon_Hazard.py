@@ -7,7 +7,7 @@ def create_canyon_map():
     
     m = leafmap.Map(
         center=CENTER,
-        zoom=15.8,
+        zoom=15,
         pitch=75,    # 3D 傾斜
         bearing=-90, # 視角朝西
         style="liberty",
@@ -80,7 +80,7 @@ def create_canyon_map():
         "type": "FeatureCollection",
         "features": [{
             "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [121.561, 24.174]},
+            "geometry": {"type": "Point", "coordinates": [121.5614, 24.1749]},
             "properties": {
                 "地點": "靳珩公園",
                 "歷史": "紀念民國46年殉職的靳珩段長，見證開路艱辛。"
