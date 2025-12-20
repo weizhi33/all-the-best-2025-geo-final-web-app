@@ -7,7 +7,8 @@ def create_canyon_map():
     
     m = leafmap.Map(
         center=CENTER,
-        zoom=15.8,
+        # ★★★ 修正這裡：把 15.8 改小成 14.2，視角就會拉遠 ★★★
+        zoom=14.2,   
         pitch=75,    # 3D 傾斜
         bearing=-90, # 視角朝西
         style="liberty",
@@ -73,14 +74,14 @@ def create_canyon_map():
     }
     m.add_geojson(DAM_POLYGON, layer_type="fill", paint={"fill-color": "#ffcc00", "fill-opacity": 0.8})
 
-    # 6. ★★★ 改用 GeoJSON 圓點 (保證點擊有反應) ★★★
+    # 6. GeoJSON 圓點 (互動層)
     
     # 點 A: 靳珩公園 (白色圓點)
     JINHENG_POINT = {
         "type": "FeatureCollection",
         "features": [{
             "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [121.561, 24.174]},
+            "geometry": {"type": "Point", "coordinates": [121.561, 24.173]},
             "properties": {
                 "地點": "靳珩公園",
                 "歷史": "紀念民國46年殉職的靳珩段長，見證開路艱辛。"
@@ -142,7 +143,7 @@ def Page():
             
             solara.Markdown("---")
             
-            # 1. 重點：堰塞湖 (放最上面)
+            # 1. 重點：堰塞湖
             with solara.Card("🔵 關鍵災害：堰塞湖 (Barrier Lake)", margin=0, elevation=2):
                 solara.Markdown("""
                 請觀察地圖左側的 **藍色區域**。
