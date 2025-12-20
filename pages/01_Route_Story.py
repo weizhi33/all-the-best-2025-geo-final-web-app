@@ -1,8 +1,9 @@
 import solara
 import leafmap.foliumap as leafmap
+import io  # <--- 關鍵解藥：記憶體操作工具
 
 # ==========================================
-# 1. 定義沿途亮點 (修正：只保留與專題相關的節點)
+# 1. 定義沿途亮點 (埔里 -> 太魯閣)
 # ==========================================
 ROUTE_HIGHLIGHTS = [
     {
@@ -46,7 +47,7 @@ ROUTE_HIGHLIGHTS = [
         壯麗的背後，隱藏著落石與堰塞湖的危機。
         **(稍後的 Page 06，我們將深入分析這裡脆弱的地質災害)**。
         """,
-        "icon": "warning-sign", # 改成警示圖標
+        "icon": "warning-sign", 
         "color": "red" 
     },
     {
@@ -78,26 +79,32 @@ def Page():
     
     highlight = ROUTE_HIGHLIGHTS[current_step.value]
     
-    def get_map():
-        m = leafmap.Map(
-            center=highlight["location"],
-            zoom=highlight["zoom"],
-            google_map="HYBRID",
-            draw_control=False,
-            measure_control=False,
-        )
-        
-        for item in ROUTE_HIGHLIGHTS:
-            is_active = (item["id"] == current_step.value)
-            m.add_marker(
-                location=item["location"],
-                popup=item["title"],
-                icon=leafmap.folium.Icon(
-                    color=item["color"] if is_active else "gray", 
-                    icon=item["icon"] if is_active else "circle",
-                )
+    # 建立地圖物件
+    m = leafmap.Map(
+        center=highlight["location"],
+        zoom=highlight["zoom"],
+        google_map="HYBRID",
+        draw_control=False,
+        measure_control=False,
+    )
+    
+    for item in ROUTE_HIGHLIGHTS:
+        is_active = (item["id"] == current_step.value)
+        m.add_marker(
+            location=item["location"],
+            popup=item["title"],
+            icon=leafmap.folium.Icon(
+                color=item["color"] if is_active else "gray", 
+                icon=item["icon"] if is_active else "circle",
             )
-        return m
+        )
+
+    # ★★★ 關鍵修復：使用 io.BytesIO 取代 .to_html() ★★★
+    # 這樣就不會去寫硬碟，避開 Permission Error
+    fp = io.BytesIO()
+    m.save(fp, close_file=False)
+    fp.seek(0)
+    map_html_str = fp.read().decode('utf-8')
 
     with solara.Column(style={"height": "100vh", "padding": "0"}):
         
@@ -142,14 +149,14 @@ def Page():
                             style=style
                         )
 
-            # 右側：地圖
+            # 右側：地圖 (iframe)
             with solara.Column(style={"height": "100%", "padding": "0"}):
                 solara.Div(
                     children=[
                          solara.HTML(
                             tag="iframe",
                             attributes={
-                                "srcdoc": get_map().to_html(),
+                                "srcdoc": map_html_str, # 使用記憶體生成的 HTML 字串
                                 "width": "100%",
                                 "height": "100%",
                                 "style": "border: none; width: 100%; height: 750px;" 
