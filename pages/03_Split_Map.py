@@ -16,22 +16,28 @@ def Page():
             measure_control=False,
         )
         
-        # 2. 建立捲簾 (Split Map)
-        # 左邊：Google Satellite (衛星) -> 看水色 (淤積土黃色)
-        # 右邊：Google Terrain (地形) -> 看等高線 (V型谷)
+        # 2. 定義圖磚網址 (直接用 URL 最穩，不再依賴關鍵字)
+        # Google Satellite (衛星) - 用於看淤積水色
+        url_sat = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+        
+        # Google Terrain (地形) - 用於看等高線與暈渲
+        url_ter = "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
+        
+        # 3. 建立捲簾 (Split Map)
+        # 這裡直接傳入網址字串
         m.split_map(
-            left_layer="GOOGLE_SATELLITE", 
-            right_layer="GOOGLE_TERRAIN",
+            left_layer=url_sat, 
+            right_layer=url_ter,
             left_label="衛星：淤積水色",
             right_label="地形：河谷等高線"
         )
         
-        # 加入圖例說明 (選擇性)
-        m.add_legend(title="左：衛星影像 | 右：地形暈渲", position="bottomright")
+        # 加入圖例 (選擇性)
+        m.add_legend(title="捲簾對照：衛星 vs 地形", position="bottomright")
 
         return m
 
-    # 3. 記憶體輸出 HTML (避開 Read-only 錯誤，這是最穩的寫法)
+    # 4. 記憶體輸出 HTML (最穩定的寫法)
     m = get_wushe_map()
     fp = io.BytesIO()
     m.save(fp, close_file=False)
@@ -50,7 +56,7 @@ def Page():
         # --- 內容區 ---
         with solara.Columns([1, 3], style={"height": "calc(100vh - 100px)"}):
             
-            # 左側：地理分析 (保留您的文字)
+            # 左側：地理分析
             with solara.Column(style={"padding": "20px", "background-color": "white", "height": "100%", "overflow-y": "auto"}):
                 
                 solara.Markdown("### 碧湖之下隱藏的危機")
@@ -72,7 +78,7 @@ def Page():
                 solara.Markdown("---")
                 solara.Info("💡 地圖圖層說明：右側使用了 Google Terrain 地形圖層，帶有立體暈渲 (Hillshade) 效果，能清楚呈現山谷的立體感。")
 
-            # 右側：地圖 (Iframe 渲染)
+            # 右側：地圖
             with solara.Column(style={"height": "100%", "padding": "0"}):
                 solara.Div(
                     children=[
@@ -87,7 +93,7 @@ def Page():
                         )
                     ],
                     style={"height": "100%", "width": "100%"},
-                    key="wushe-split-map"
+                    key="wushe-split-map-v2"
                 )
 
 Page()
