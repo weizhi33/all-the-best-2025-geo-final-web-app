@@ -10,110 +10,120 @@ def Page():
             -webkit-text-fill-color: transparent;
             font-weight: 900;
             margin-bottom: 10px;
-            font-size: 2.5em; /* 確保字體夠大 */
+            font-size: 2.8em; 
             line-height: 1.2;
+            text-align: center;
+        }
+        .hero-subtitle {
+            color: #555;
+            font-size: 1.2em;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 20px;
         }
         .tech-tag {
             background-color: #e0f2f1;
             color: #00695c;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
             font-weight: bold;
-            margin-right: 5px;
-            display: inline-block; /* 確保標籤排列整齊 */
-            margin-bottom: 5px;
+            margin: 0 5px;
+            display: inline-block;
         }
-        .card-container {
-            transition: transform 0.2s;
-            height: 100%;
+        .section-card {
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
-        .card-container:hover {
-            transform: translateY(-5px);
-            z-index: 10;
+        .toc-button {
+            width: 100% !important;
+            justify-content: flex-start !important;
+            margin-bottom: 10px !important;
+            height: auto !important;
+            padding: 10px !important;
         }
     """)
 
     with solara.Column(style={"padding": "40px", "max-width": "1200px", "margin": "0 auto"}):
         
-        # --- 1. Hero Section (主視覺區) ---
-        with solara.Column(align="center", style={"margin-bottom": "50px"}):
-            # ★★★ 修正點 1：改用 solara.HTML 來支援 classes ★★★
-            solara.HTML(tag="h1", unsafe_innerHTML="🇹🇼 中橫數位地誌", classes=["hero-title"])
+        # --- 1. Hero Section (主視覺標題區) ---
+        with solara.Column(align="center", style={"margin-bottom": "40px"}):
+            # 主標題
+            solara.HTML(tag="h1", unsafe_innerHTML="穿越 3275m 的雲端地誌：中橫公路時空探索", classes=["hero-title"])
+            # 副標題
+            solara.HTML(tag="div", unsafe_innerHTML="整合 Solara、DuckDB 與 3D 視覺化的 WEB GIS 實踐", classes=["hero-subtitle"])
             
-            solara.Markdown("### Cross-Island Chronicle: From Sea to Summit")
-            solara.Markdown("從海平面 0m 到海拔 3275m 的地理空間探索之旅")
-            
-            # 技術堆疊標籤
-            with solara.Row(style={"margin-top": "20px", "flex-wrap": "wrap", "justify-content": "center"}):
-                for tech in ["Python", "Solara", "Leafmap", "DuckDB", "USGS API", "Sentinel-2"]:
+            # 技術標籤
+            with solara.Row(style={"margin-top": "15px", "flex-wrap": "wrap", "justify-content": "center"}):
+                for tech in ["Python Full-Stack", "Solara", "Leafmap", "DuckDB Spatial", "USGS API", "GeoAI"]:
                     solara.HTML(tag="span", classes=["tech-tag"], unsafe_innerHTML=tech)
 
         solara.Markdown("---")
 
-        # --- 2. 專案亮點 (四大金剛) ---
-        solara.Markdown("## 🗺️ 專案亮點導覽 (Project Highlights)")
+        # --- 2. 前言與動機 (Motivation) ---
+        # 使用兩欄佈局：左邊放文字敘述，右邊放目錄
+        with solara.Columns([3, 2], style={"gap": "40px"}):
+            
+            # 左欄：專案背景與動機
+            with solara.Column():
+                solara.Markdown("## 📖 前言：從海平面到 3275m 的數位敘事")
+                
+                with solara.Div(classes=["section-card"]):
+                    solara.Markdown("### 1. 背景與動機 (Background)")
+                    solara.Markdown("""
+                    **地理的垂直跨度**：
+                    台灣是一座高山島嶼，中橫公路（台14甲+台8線）是唯一能從埔里盆地直達海拔 3275m 武嶺，再下切至花蓮立霧溪口的「黃金剖面」。
+                    
+                    **實踐課程所學**：
+                    傳統 GIS 軟體難以分享，我們希望利用本學期學到的 **Python 全端技術 (Solara + Leafmap + DuckDB)**，打造一個「雲原生 (Cloud-Native)」的互動圖臺。
+                    """)
+                    
+                    solara.Markdown("### 2. 問題意識 (Problem Statement)")
+                    solara.Markdown("""
+                    * **資訊破碎化**：遊客往往只依賴導航，忽略了腳下的斷層帶、頭頂的崩塌地，以及消失的歷史地景。
+                    * **缺乏互動**：現有的旅遊網頁多為靜態圖文，缺乏「時空互動性」（如衛星變遷、地震深度視覺化）。
+                    """)
+                    
+                    solara.Markdown("### 3. 專案目標 (Goal)")
+                    solara.Markdown("""
+                    以「橫越台灣」為軸線，整合 **食衣住行育樂** 六大面向，打造完整的 StoryMap：
+                    * **行與食**：整理加油站與補給攻略 (Page 07)。
+                    * **育與樂**：重現滑雪場歷史 (Page 05) 與 3D 災害模擬 (Page 06)。
+                    * **地與理**：結合 GeoAI 海岸變遷 (Page 08) 與 DuckDB 地震大數據 (Page 09)。
+                    """)
+
+            # 右欄：目錄 (Table of Contents) - 無圖片，純按鈕導覽
+            with solara.Column():
+                solara.Markdown("## 🗺️ 章節目錄 (Directory)")
+                
+                with solara.Div(classes=["section-card"]):
+                    solara.Markdown("**請點擊下方按鈕前往各章節：**")
+                    
+                    # 依據故事邏輯分組
+                    solara.Text("第一部：啟程與地理環境", style="font-weight: bold; color: #666; margin-top: 10px;")
+                    solara.Button("01. 路線導覽：西進東出", icon_name="mdi-map-marker-path", color="primary", text=True, href="/01_Route_Story", classes=["toc-button"])
+                    solara.Button("02. 地形探索：垂直剖面", icon_name="mdi-chart-bell-curve", color="primary", text=True, href="/02_Terrain_Explorer", classes=["toc-button"])
+                    
+                    solara.Text("第二部：水利與歷史人文", style="font-weight: bold; color: #666; margin-top: 10px;")
+                    solara.Button("03. 霧社水庫：捲簾比較", icon_name="mdi-compare", color="teal", text=True, href="/03_Split_Map", classes=["toc-button"])
+                    solara.Button("04. 武界引水：地下隧道", icon_name="mdi-water-pump", color="teal", text=True, href="/04_Wujie_Diversion", classes=["toc-button"])
+                    solara.Button("05. 歷史滑雪場：古今對照", icon_name="mdi-snowflake", color="teal", text=True, href="/05_Ski_Resort", classes=["toc-button"])
+                    
+                    solara.Text("第三部：災害與實用資訊", style="font-weight: bold; color: #666; margin-top: 10px;")
+                    solara.Button("06. 峽谷災害：3D 模擬", icon_name="mdi-alert-decagram", color="orange", text=True, href="/06_Canyon_Hazard", classes=["toc-button"])
+                    solara.Button("07. 行前攻略：補給管制", icon_name="mdi-gas-station", color="orange", text=True, href="/07_Travel_Guide", classes=["toc-button"])
+                    
+                    solara.Text("第四部：進階 GIS 分析 (Tech)", style="font-weight: bold; color: #666; margin-top: 10px;")
+                    solara.Button("08. 海岸變遷：GeoAI 應用", icon_name="mdi-satellite-variant", color="red", text=True, href="/08_Journey_End", classes=["toc-button"])
+                    solara.Button("09. 地震大數據：DuckDB", icon_name="mdi-database-search", color="red", text=True, href="/09_Seismic_Activity", classes=["toc-button"])
+
+        solara.Markdown("---")
         
-        with solara.GridFixed(columns=2, row_gap="20px", column_gap="20px"):
-            
-            # ★★★ 修正點 2：用 solara.Div 包住 Card 來做 hover 動畫，避免 Card 不支援 classes ★★★
-            
-            # Card 1: 歷史滑雪場
-            with solara.Div(classes=["card-container"]):
-                with solara.Card(elevation=2):
-                    with solara.Column():
-                        solara.Markdown("### 🏔️ 05. 亞熱帶的雪國傳說")
-                        solara.Markdown("**主題：歷史地理重建 (Historical GIS)**")
-                        solara.Markdown("利用古地圖與航照，結合 GPS 精確座標校正，在地圖上重現 1960 年代合歡山滑雪場的纜車與滑道遺址。")
-                        solara.Markdown("**技術重點：** GeoJSON 向量繪製、座標校正")
-                        solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/05_Ski_Resort")
-
-            # Card 2: 海岸線變遷
-            with solara.Div(classes=["card-container"]):
-                with solara.Card(elevation=2):
-                    with solara.Column():
-                        solara.Markdown("### 🌊 08. 穿越百年的海岸線")
-                        solara.Markdown("**主題：環境變遷監測 (Change Detection)**")
-                        solara.Markdown("聚焦立霧溪出海口，透過 Sentinel-2 衛星影像與 USGS 歷史圖資，觀察 25 年來的海岸線退縮與陰陽海變化。")
-                        solara.Markdown("**技術重點：** 衛星影像串接、時序滑桿")
-                        solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/08_Journey_End")
-
-            # Card 3: 地震大數據
-            with solara.Div(classes=["card-container"]):
-                with solara.Card(elevation=2):
-                    with solara.Column():
-                        solara.Markdown("### 💓 09. 中橫震災大數據")
-                        solara.Markdown("**主題：災害地理資訊 (Hazard GIS)**")
-                        solara.Markdown("串接 USGS 真實資料流，利用 DuckDB 在瀏覽器端即時分析過去 25 年、數千筆地震紀錄的板塊構造。")
-                        solara.Markdown("**技術重點：** DuckDB In-Memory 運算、API 串接")
-                        solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/09_Seismic_Activity")
-
-            # Card 4: 峽谷災害
-            with solara.Div(classes=["card-container"]):
-                with solara.Card(elevation=2):
-                    with solara.Column():
-                        solara.Markdown("### ⚠️ 06. 峽谷之險與堰塞湖")
-                        solara.Markdown("**主題：地形災害分析 (Geomorphology)**")
-                        solara.Markdown("探討太魯閣峽谷脆弱的地質條件，並透過歷史案例分析土石流與堰塞湖的形成機制。")
-                        solara.Markdown("**技術重點：** 地形圖判釋、災害潛勢分析")
-                        solara.Button("前往探索", color="primary", text=True, icon_name="mdi-arrow-right", href="/06_Canyon_Hazard")
-
-        solara.Markdown("---")
-
-        # --- 3. 研究方法與資料來源 ---
-        with solara.Details(summary="📚 資料來源與研究方法 (Methodology)"):
-            solara.Markdown("""
-            **本專案採用全端 GIS (Full-Stack GIS) 架構開發：**
-            
-            * **前端框架**：Solara (React-based Python framework) + Leafmap
-            * **資料庫引擎**：DuckDB (WASM/In-Memory OLAP)
-            * **數據來源**：
-                * *地震*：USGS Earthquake Hazards Program (API)
-                * *衛星*：Sentinel-2 (EOX Cloudless)
-                * *歷史圖資*：中研院台灣百年歷史地圖
-            """)
-            
-        solara.Markdown("---")
-        solara.Info("💡 導覽提示：請點擊上方卡片按鈕，或使用左側選單 (Sidebar) 進行章節切換。", icon="mdi-hand-pointing-left")
+        # --- 3. 頁尾 ---
+        with solara.Column(align="center", style={"margin-top": "20px", "color": "#888"}):
+            solara.Markdown("© 2025 地理資訊系統運用程式期末專題 | Developed with Solara & Leafmap")
 
 Page()
