@@ -56,9 +56,9 @@ def Page():
             with solara.Column(style={"padding": "20px", "background-color": "white", "height": "100%", "overflow-y": "auto"}):
                 
                 # ★★★ 新增：水庫小檔案 ★★★
-                with solara.Card("💧 關於霧社水庫 (Wanda Reservoir)", margin=0, elevation=2):
+                with solara.Card("💧 關於霧社水庫", margin=0, elevation=2):
                     solara.Markdown("""
-                    **別名**：碧湖 (Bihu)
+                    **別名**：碧湖
                     **完工年份**：1957 年
                     **功能**：攔截濁水溪上游水源，調節水量傳送至日月潭發電。
                     
@@ -72,7 +72,7 @@ def Page():
                     solara.Markdown("""
                     **1. 混濁的水色 (左圖)**
                     * 請注意地圖上方（萬大溪匯入處），水面呈現**土黃色**。
-                    * 這不是污染，而是上游崩塌帶來的巨量懸浮泥沙，顯示水庫正面臨「土腸寸斷」的淤積危機。
+                    * 這不是污染，而是上游崩塌帶來的巨量懸浮泥沙，顯示水庫正面臨淤積危機。
                     
                     **2. 險峻的 V 型谷 (右圖)**
                     * 切換到右側地形圖，可見兩岸等高線極度密集。
