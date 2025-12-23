@@ -85,7 +85,7 @@ def Page():
                 
                 with solara.Card("🏗️ 工程奇蹟：新舊傳承", margin=0, elevation=2):
                     solara.Markdown("""
-                    **越域引水 (Transbasin Diversion)**
+                    **越域引水**
                     這條隧道直接穿過山脈，將濁水溪的水送往**日月潭**。這也是為什麼日月潭雖然沒有大河注入，水位卻能終年保持穩定的秘密。
                     
                     **歷史軌跡**：
