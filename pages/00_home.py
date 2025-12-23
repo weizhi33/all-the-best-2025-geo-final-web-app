@@ -64,7 +64,6 @@ def Page():
         solara.Markdown("---")
 
         # --- 2. 前言與動機 (Motivation) ---
-        # 使用兩欄佈局：左邊放文字敘述，右邊放目錄
         with solara.Columns([3, 2], style={"gap": "40px"}):
             
             # 左欄：專案背景與動機
@@ -95,34 +94,37 @@ def Page():
                     * **地與理**：結合 GeoAI 海岸變遷 (Page 08) 與 DuckDB 地震大數據 (Page 09)。
                     """)
 
-            # 右欄：目錄 (Table of Contents) - 無圖片，純按鈕導覽
+            # Right Column: Directory (Table of Contents)
+            # ★★★ 修正重點：href 拿掉前面的數字與底線，並改為小寫 (符合 Solara 預設路由規則) ★★★
             with solara.Column():
                 solara.Markdown("## 🗺️ 章節目錄 (Directory)")
                 
                 with solara.Div(classes=["section-card"]):
                     solara.Markdown("**請點擊下方按鈕前往各章節：**")
                     
-                    # 依據故事邏輯分組
                     solara.Text("第一部：啟程與地理環境", style="font-weight: bold; color: #666; margin-top: 10px;")
-                    solara.Button("01. 路線導覽：西進東出", icon_name="mdi-map-marker-path", color="primary", text=True, href="/01_Route_Story", classes=["toc-button"])
-                    solara.Button("02. 地形探索：垂直剖面", icon_name="mdi-chart-bell-curve", color="primary", text=True, href="/02_Terrain_Explorer", classes=["toc-button"])
+                    # 修正 href: /01_Route_Story -> /route_story
+                    solara.Button("01. 路線導覽：西進東出", icon_name="mdi-map-marker-path", color="primary", text=True, href="/route_story", classes=["toc-button"])
+                    solara.Button("02. 地形探索：垂直剖面", icon_name="mdi-chart-bell-curve", color="primary", text=True, href="/terrain_explorer", classes=["toc-button"])
                     
                     solara.Text("第二部：水利與歷史人文", style="font-weight: bold; color: #666; margin-top: 10px;")
-                    solara.Button("03. 霧社水庫：捲簾比較", icon_name="mdi-compare", color="teal", text=True, href="/03_Split_Map", classes=["toc-button"])
-                    solara.Button("04. 武界引水：地下隧道", icon_name="mdi-water-pump", color="teal", text=True, href="/04_Wujie_Diversion", classes=["toc-button"])
-                    solara.Button("05. 歷史滑雪場：古今對照", icon_name="mdi-snowflake", color="teal", text=True, href="/05_Ski_Resort", classes=["toc-button"])
+                    # 修正 href
+                    solara.Button("03. 霧社水庫：捲簾比較", icon_name="mdi-compare", color="teal", text=True, href="/split_map", classes=["toc-button"])
+                    solara.Button("04. 武界引水：地下隧道", icon_name="mdi-water-pump", color="teal", text=True, href="/wujie_diversion", classes=["toc-button"])
+                    solara.Button("05. 歷史滑雪場：古今對照", icon_name="mdi-snowflake", color="teal", text=True, href="/ski_resort", classes=["toc-button"])
                     
                     solara.Text("第三部：災害與實用資訊", style="font-weight: bold; color: #666; margin-top: 10px;")
-                    solara.Button("06. 峽谷災害：3D 模擬", icon_name="mdi-alert-decagram", color="orange", text=True, href="/06_Canyon_Hazard", classes=["toc-button"])
-                    solara.Button("07. 行前攻略：補給管制", icon_name="mdi-gas-station", color="orange", text=True, href="/07_Travel_Guide", classes=["toc-button"])
+                    # 修正 href
+                    solara.Button("06. 峽谷災害：3D 模擬", icon_name="mdi-alert-decagram", color="orange", text=True, href="/canyon_hazard", classes=["toc-button"])
+                    solara.Button("07. 行前攻略：補給管制", icon_name="mdi-gas-station", color="orange", text=True, href="/travel_guide", classes=["toc-button"])
                     
                     solara.Text("第四部：進階 GIS 分析 (Tech)", style="font-weight: bold; color: #666; margin-top: 10px;")
-                    solara.Button("08. 海岸變遷：GeoAI 應用", icon_name="mdi-satellite-variant", color="red", text=True, href="/08_Journey_End", classes=["toc-button"])
-                    solara.Button("09. 地震大數據：DuckDB", icon_name="mdi-database-search", color="red", text=True, href="/09_Seismic_Activity", classes=["toc-button"])
+                    # 修正 href
+                    solara.Button("08. 海岸變遷：GeoAI 應用", icon_name="mdi-satellite-variant", color="red", text=True, href="/journey_end", classes=["toc-button"])
+                    solara.Button("09. 地震大數據：DuckDB", icon_name="mdi-database-search", color="red", text=True, href="/seismic_activity", classes=["toc-button"])
 
         solara.Markdown("---")
         
-        # --- 3. 頁尾 ---
         with solara.Column(align="center", style={"margin-top": "20px", "color": "#888"}):
             solara.Markdown("© 2025 地理資訊系統運用程式期末專題 | Developed with Solara & Leafmap")
 
