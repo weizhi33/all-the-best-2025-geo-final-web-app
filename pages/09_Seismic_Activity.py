@@ -162,13 +162,13 @@ def Page():
                 solara.Markdown("### 📅 時間軸篩選")
                 solara.SliderRangeInt(label="", value=year_range, min=min_y, max=max_y, thumb_label="always")
                 
-                solara.Markdown("### 📉 最小規模 (Magnitude)")
+                solara.Markdown("### 📉 最小規模 ")
                 solara.SliderFloat(label="", value=min_magnitude, min=4.0, max=7.5, step=0.1, thumb_label="always")
                 
                 solara.Markdown("---")
                 
                 # 圖例說明
-                with solara.Card("🎨 深度構造 (Depth)", margin=0, elevation=1, style={"background-color": "#2c3e50", "color": "white"}):
+                with solara.Card("🎨 深度構造 ", margin=0, elevation=1, style={"background-color": "#2c3e50", "color": "white"}):
                     solara.Markdown("* <span style='color:#FF0000'>■</span> **極淺層 (<20km)**：破壞力最大，如 0403 花蓮地震。")
                     solara.Markdown("* <span style='color:#FF8800'>■</span> **淺層 (20-60km)**")
                     solara.Markdown("* <span style='color:#FFFF00'>■</span> **中層 (60-150km)**")

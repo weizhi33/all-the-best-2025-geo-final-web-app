@@ -111,7 +111,7 @@ def Page():
             with solara.Column(style={"padding": "20px", "background-color": "white", "height": "100%", "overflow-y": "auto"}):
                 
                 # 1. 交通管制 (最重要的放上面)
-                with solara.Card("🚧 交通管制 (Traffic Control)", margin=0, elevation=2):
+                with solara.Card("🚧 交通管制", margin=0, elevation=2):
                     solara.Markdown("""
                     **關原災害路段 (117k)**：
                     * 受地震與坍方影響，該路段通常實施**每日定時放行**（例如：07:00~08:00, 12:00~13:00, 17:00 等）。

@@ -115,7 +115,7 @@ def Page():
                 # 2. 地理教室：小平地的形成 (您指定新增的部分)
                 with solara.Card("🏖️ 那塊小平地怎麼來的？", margin=0, elevation=2):
                     solara.Markdown("""
-                    **立霧溪沖積扇 (Liwu River Delta)**
+                    **立霧溪沖積扇**
                     
                     您在地圖上看到的河口小平地，其實是兩股巨大力量的「戰場」：
                     

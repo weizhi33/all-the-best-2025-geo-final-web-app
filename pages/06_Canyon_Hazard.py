@@ -144,7 +144,7 @@ def Page():
             solara.Markdown("---")
             
             # 1. 重點：堰塞湖
-            with solara.Card("🔵 關鍵災害：堰塞湖 (Barrier Lake)", margin=0, elevation=2):
+            with solara.Card("🔵 關鍵災害：堰塞湖", margin=0, elevation=2):
                 solara.Markdown("""
                 請觀察地圖左側的 **藍色區域**。
                 
@@ -155,7 +155,7 @@ def Page():
             solara.Markdown("<br>")
 
             # 2. 重點：天然壩
-            with solara.Card("🟡 災害成因：天然壩 (Landslide Dam)", margin=0, elevation=1):
+            with solara.Card("🟡 災害成因：天然壩", margin=0, elevation=1):
                 solara.Markdown("""
                 地圖中央的 **黃色區域** 為崩塌熱點。
                 
